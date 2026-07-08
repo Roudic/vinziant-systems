@@ -1408,6 +1408,87 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Cloud save */
+    .cloud-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      animation: fadeUp 0.7s var(--ease) 0.15s both;
+    }
+
+    .cloud-bar-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .cloud-bar-title span {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .cloud-bar-fields {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .cloud-bar input,
+    .cloud-bar select {
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--sans);
+      min-width: 0;
+    }
+
+    .cloud-bar input { flex: 1; min-width: 140px; }
+    .cloud-bar select { min-width: 180px; max-width: 260px; }
+
+    .cloud-bar input:focus,
+    .cloud-bar select:focus {
+      outline: none;
+      border-color: rgba(56,189,248,0.4);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+    }
+
+    .cloud-bar-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cloud-status {
+      width: 100%;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+
+    .cloud-status.ok { color: var(--green); }
+    .cloud-status.err { color: var(--red); }
+    .cloud-status.busy { color: var(--cyan); }
+
     footer {
       text-align: center;
       margin-top: 48px;
@@ -1441,6 +1522,22 @@
       </a>
       <a href="index.html" class="nav-pill">← Back to site</a>
     </nav>
+
+    <div class="cloud-bar" id="cloudBar">
+      <div class="cloud-bar-title">☁️ <span>Turso Cloud</span></div>
+      <div class="cloud-bar-fields">
+        <input type="text" id="planName" placeholder="Plan name (e.g. Week 12 — Store 1234)" maxlength="80" />
+        <select id="planSelect" title="Load a saved plan">
+          <option value="">— Load saved plan —</option>
+        </select>
+      </div>
+      <div class="cloud-bar-actions">
+        <button class="btn btn-primary" id="savePlanBtn" type="button"><span class="btn-icon">💾</span> Save</button>
+        <button class="btn" id="newPlanBtn" type="button"><span class="btn-icon">＋</span> New</button>
+        <button class="btn" id="deletePlanBtn" type="button"><span class="btn-icon">🗑</span> Delete</button>
+      </div>
+      <div class="cloud-status" id="cloudStatus">Connect Turso in Vercel env vars to enable cloud save.</div>
+    </div>
 
     <header class="hero">
       <div class="hero-badge"><span class="pulse"></span> Live calculations · updates as you type</div>
@@ -1658,7 +1755,9 @@
     ];
 
     const CIRC = 2 * Math.PI * 46;
+    const API_BASE = '/api/plans';
     let activeDay = 0;
+    let currentPlanId = null;
     const staffData = {};
     const partSalesData = {};
     const animState = {};
@@ -1705,6 +1804,189 @@
         operatingDays: Math.min(7, Math.max(1, parseInt($('operatingDays').value) || 7)),
         avgWage: parseFloat($('avgWage').value) || 0,
       };
+    }
+
+    function serializeState() {
+      const inp = getInputs();
+      return {
+        weekSales: inp.weekSales,
+        targetSplh: inp.targetSplh,
+        trainingHours: inp.trainingHours,
+        operatingDays: inp.operatingDays,
+        avgWage: inp.avgWage,
+        activeDay,
+        staffData,
+        partSalesData,
+      };
+    }
+
+    function applyState(data) {
+      if (!data) return;
+
+      $('weekSales').value = data.weekSales ?? 125000;
+      $('targetSplh').value = data.targetSplh ?? 110;
+      $('trainingHours').value = data.trainingHours ?? 100;
+      $('operatingDays').value = data.operatingDays ?? 7;
+      $('avgWage').value = data.avgWage ?? 16;
+
+      DAYS_FULL.forEach((_, di) => {
+        DAYPARTS.forEach(dp => {
+          const saved = data.staffData?.[di]?.[dp.id];
+          staffData[di][dp.id] = saved
+            ? { ...saved }
+            : { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+          partSalesData[di][dp.id] = data.partSalesData?.[di]?.[dp.id] ?? 0;
+        });
+      });
+
+      activeDay = Math.min(6, Math.max(0, data.activeDay ?? 0));
+    }
+
+    function setCloudStatus(msg, kind = '') {
+      const el = $('cloudStatus');
+      el.textContent = msg;
+      el.className = 'cloud-status' + (kind ? ' ' + kind : '');
+    }
+
+    async function fetchPlans() {
+      const res = await fetch(API_BASE);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to load plans (${res.status})`);
+      }
+      return res.json();
+    }
+
+    async function refreshPlanList(selectId = currentPlanId) {
+      const { plans } = await fetchPlans();
+      const sel = $('planSelect');
+      const prev = selectId || sel.value;
+      sel.innerHTML = '<option value="">— Load saved plan —</option>';
+      plans.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+      });
+      if (prev) sel.value = prev;
+      return plans;
+    }
+
+    async function savePlan() {
+      const name = $('planName').value.trim();
+      if (!name) {
+        setCloudStatus('Enter a plan name before saving.', 'err');
+        $('planName').focus();
+        return;
+      }
+
+      setCloudStatus('Saving…', 'busy');
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: currentPlanId || undefined,
+            name,
+            data: serializeState(),
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Save failed');
+
+        currentPlanId = body.plan.id;
+        await refreshPlanList(currentPlanId);
+        setCloudStatus(`Saved "${name}" to Turso.`, 'ok');
+        showToast('Plan saved to cloud');
+      } catch (e) {
+        setCloudStatus(e.message, 'err');
+      }
+    }
+
+    async function loadPlan(id) {
+      if (!id) return;
+
+      setCloudStatus('Loading…', 'busy');
+      try {
+        const res = await fetch(`${API_BASE}?id=${encodeURIComponent(id)}`);
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Load failed');
+
+        currentPlanId = body.id;
+        $('planName').value = body.name;
+        applyState(body.data);
+        renderAll();
+        setCloudStatus(`Loaded "${body.name}".`, 'ok');
+        showToast('Plan loaded from cloud');
+      } catch (e) {
+        setCloudStatus(e.message, 'err');
+      }
+    }
+
+    async function deletePlan() {
+      if (!currentPlanId) {
+        setCloudStatus('No plan selected to delete.', 'err');
+        return;
+      }
+
+      const name = $('planName').value.trim() || 'this plan';
+      if (!confirm(`Delete "${name}" from Turso? This cannot be undone.`)) return;
+
+      setCloudStatus('Deleting…', 'busy');
+      try {
+        const res = await fetch(`${API_BASE}?id=${encodeURIComponent(currentPlanId)}`, { method: 'DELETE' });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || 'Delete failed');
+
+        currentPlanId = null;
+        $('planName').value = '';
+        $('planSelect').value = '';
+        await refreshPlanList();
+        setCloudStatus('Plan deleted.', 'ok');
+        showToast('Plan deleted');
+      } catch (e) {
+        setCloudStatus(e.message, 'err');
+      }
+    }
+
+    function newPlan() {
+      currentPlanId = null;
+      $('planName').value = '';
+      $('planSelect').value = '';
+      seedMonday();
+      $('weekSales').value = 125000;
+      $('targetSplh').value = 110;
+      $('trainingHours').value = 100;
+      $('operatingDays').value = 7;
+      $('avgWage').value = 16;
+      activeDay = 0;
+      for (let i = 1; i < DAYS_FULL.length; i++) {
+        DAYPARTS.forEach(dp => {
+          staffData[i][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+          partSalesData[i][dp.id] = 0;
+        });
+      }
+      renderAll();
+      setCloudStatus('New blank plan — enter a name and save when ready.', 'ok');
+      showToast('New plan started');
+    }
+
+    async function initCloud() {
+      try {
+        const plans = await refreshPlanList();
+        setCloudStatus(plans.length
+          ? `${plans.length} saved plan${plans.length === 1 ? '' : 's'} in Turso.`
+          : 'Turso connected — save your first plan above.',
+          'ok');
+      } catch (e) {
+        const offline = location.protocol === 'file:';
+        setCloudStatus(
+          offline
+            ? 'Open on Vercel (not local file) to use Turso cloud save.'
+            : e.message,
+          'err'
+        );
+      }
     }
 
     function calcBudget(inp) {
@@ -2265,6 +2547,13 @@
       showToast(`${DAYS_FULL[activeDay]} reset`);
     });
 
+    $('savePlanBtn').addEventListener('click', savePlan);
+    $('newPlanBtn').addEventListener('click', newPlan);
+    $('deletePlanBtn').addEventListener('click', deletePlan);
+    $('planSelect').addEventListener('change', e => {
+      if (e.target.value) loadPlan(e.target.value);
+    });
+
     // Step nav highlight on scroll
     const stepLinks = document.querySelectorAll('.step-link');
     const sections = ['step1','step2','step3'].map(id => $(id));
@@ -2280,6 +2569,7 @@
     sections.forEach(s => s && obs.observe(s));
 
     renderAll();
+    initCloud();
   </script>
 </body>
 </html>
