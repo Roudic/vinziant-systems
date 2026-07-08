@@ -1552,6 +1552,18 @@
     .cloud-status.err { color: var(--red); }
     .cloud-status.busy { color: var(--cyan); }
 
+    .boot-error {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--red-soft);
+      border: 1px solid rgba(251,113,133,0.35);
+      color: var(--red);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
     footer {
       text-align: center;
       margin-top: 48px;
@@ -1578,6 +1590,7 @@
   <div class="grid-bg"></div>
 
   <div class="shell">
+    <div class="boot-error" id="bootError"></div>
     <nav>
       <a href="index.html" class="brand">
         <div class="brand-mark">VS</div>
@@ -2193,6 +2206,7 @@
 
     /* Animated number tween */
     function animateVal(el, newVal, formatter) {
+      if (!el) return;
       const key = el.id;
       const target = parseFloat(String(newVal).replace(/[^0-9.-]/g, '')) || 0;
       const start = animState[key] ?? target;
@@ -2600,7 +2614,7 @@
       $('gaugeFill').style.stroke =
         spentPct > 100 ? 'var(--red)' : spentPct > 95 ? 'var(--amber)' : 'url(#gaugeGrad)';
 
-      $('lsRemaining').querySelector('.val').style.color = remaining >= 0 ? 'var(--green)' : 'var(--red)';
+      $('lsRemaining')?.querySelector('.val')?.style && ($('lsRemaining').querySelector('.val').style.color = remaining >= 0 ? 'var(--green)' : 'var(--red)');
     }
 
     function renderBreakdown() {
@@ -2687,75 +2701,95 @@
       renderBreakdown();
     }
 
-    $('weekSales').addEventListener('input', () => {
-      distributeWeeklySales();
-      renderAll();
-      showToast('Weekly sales applied to all day parts');
-    });
-
-    $('operatingDays').addEventListener('input', () => {
-      distributeWeeklySales();
-      renderAll();
-    });
-
-    ['targetSplh','trainingHours','avgWage'].forEach(id => {
-      $(id).addEventListener('input', renderAll);
-    });
-
-    $('copyMondayBtn').addEventListener('click', () => {
-      const inp = getInputs();
-      for (let i = 1; i < inp.operatingDays; i++) {
-        DAYPARTS.forEach(dp => { staffData[i][dp.id] = { ...staffData[0][dp.id] }; });
-      }
-      renderAll();
-      showToast('Monday staffing copied to all days');
-    });
-
-    $('copyMondaySalesBtn').addEventListener('click', () => {
-      const inp = getInputs();
-      for (let i = 1; i < inp.operatingDays; i++) {
-        partSalesPct[i] = { ...partSalesPct[0] };
-        distributeDaySales(i);
-      }
-      renderAll();
-      showToast('Monday sales split copied to all days');
-    });
-
-    $('clearDayBtn').addEventListener('click', () => {
-      partSalesPct[activeDay] = { ...DEFAULT_SALES_PCT };
-      distributeDaySales(activeDay);
-      DAYPARTS.forEach(dp => {
-        staffData[activeDay][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+    function bindEvents() {
+      $('weekSales')?.addEventListener('input', () => {
+        distributeWeeklySales();
+        renderAll();
+        showToast('Weekly sales applied to all day parts');
       });
-      renderAll();
-      showToast(`${DAYS_FULL[activeDay]} reset to default sales split`);
-    });
 
-    $('savePlanBtn').addEventListener('click', savePlan);
-    $('newPlanBtn').addEventListener('click', newPlan);
-    $('deletePlanBtn').addEventListener('click', deletePlan);
-    $('planSelect').addEventListener('change', e => {
-      if (e.target.value) loadPlan(e.target.value);
-    });
+      $('operatingDays')?.addEventListener('input', () => {
+        distributeWeeklySales();
+        renderAll();
+      });
 
-    // Step nav highlight on scroll
-    const stepLinks = document.querySelectorAll('.step-link');
-    const sections = ['step1','step2','step3'].map(id => $(id));
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          stepLinks.forEach(l => l.classList.remove('active'));
-          const match = document.querySelector(`.step-link[href="#${e.target.id}"]`);
-          match?.classList.add('active');
+      ['targetSplh','trainingHours','avgWage'].forEach(id => {
+        $(id)?.addEventListener('input', renderAll);
+      });
+
+      $('copyMondayBtn')?.addEventListener('click', () => {
+        const inp = getInputs();
+        for (let i = 1; i < inp.operatingDays; i++) {
+          DAYPARTS.forEach(dp => { staffData[i][dp.id] = { ...staffData[0][dp.id] }; });
         }
+        renderAll();
+        showToast('Monday staffing copied to all days');
       });
-    }, { threshold: 0.35 });
-    sections.forEach(s => s && obs.observe(s));
 
-    seedMonday();
-    distributeWeeklySales();
-    renderAll();
-    initCloud();
+      $('copyMondaySalesBtn')?.addEventListener('click', () => {
+        const inp = getInputs();
+        for (let i = 1; i < inp.operatingDays; i++) {
+          partSalesPct[i] = { ...partSalesPct[0] };
+          distributeDaySales(i);
+        }
+        renderAll();
+        showToast('Monday sales split copied to all days');
+      });
+
+      $('clearDayBtn')?.addEventListener('click', () => {
+        partSalesPct[activeDay] = { ...DEFAULT_SALES_PCT };
+        distributeDaySales(activeDay);
+        DAYPARTS.forEach(dp => {
+          staffData[activeDay][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+        });
+        renderAll();
+        showToast(`${DAYS_FULL[activeDay]} reset to default sales split`);
+      });
+
+      $('savePlanBtn')?.addEventListener('click', savePlan);
+      $('newPlanBtn')?.addEventListener('click', newPlan);
+      $('deletePlanBtn')?.addEventListener('click', deletePlan);
+      $('planSelect')?.addEventListener('change', e => {
+        if (e.target.value) loadPlan(e.target.value);
+      });
+
+      const stepLinks = document.querySelectorAll('.step-link');
+      const sections = ['step1','step2','step3'].map(id => $(id)).filter(Boolean);
+      if (typeof IntersectionObserver !== 'undefined') {
+        const obs = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              stepLinks.forEach(l => l.classList.remove('active'));
+              document.querySelector(`.step-link[href="#${e.target.id}"]`)?.classList.add('active');
+            }
+          });
+        }, { threshold: 0.35 });
+        sections.forEach(s => obs.observe(s));
+      }
+    }
+
+    function boot() {
+      try {
+        bindEvents();
+        seedMonday();
+        distributeWeeklySales();
+        renderAll();
+        initCloud();
+      } catch (err) {
+        console.error('Calculator boot failed:', err);
+        const el = $('bootError');
+        if (el) {
+          el.style.display = 'block';
+          el.textContent = 'Calculator failed to load: ' + (err.message || err);
+        }
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
   </script>
 </body>
 </html>
