@@ -846,6 +846,132 @@
     .counter-val::-webkit-outer-spin-button,
     .counter-val::-webkit-inner-spin-button { -webkit-appearance: none; }
 
+    .labor-slider-wrap {
+      width: 100%;
+      min-width: 200px;
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .labor-slider-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .labor-slider-val {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--cyan);
+    }
+
+    .labor-slider-val.over { color: var(--red); }
+
+    .range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      border: 2px solid rgba(255,255,255,0.25);
+      box-shadow: 0 0 12px var(--glow);
+      cursor: grab;
+    }
+
+    .range-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      border: 2px solid rgba(255,255,255,0.25);
+      box-shadow: 0 0 12px var(--glow);
+      cursor: grab;
+    }
+
+    .range-slider.foh::-webkit-slider-thumb { background: linear-gradient(135deg, var(--foh), #0ea5e9); }
+    .range-slider.boh::-webkit-slider-thumb { background: linear-gradient(135deg, var(--boh), #f97316); }
+    .range-slider.leader::-webkit-slider-thumb { background: linear-gradient(135deg, var(--leader), #8b5cf6); }
+
+    .staff-sliders {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .staff-slider {
+      flex: 1;
+      min-width: 90px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .staff-slider label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .staff-slider.foh label { color: var(--foh); }
+    .staff-slider.boh label { color: var(--boh); }
+    .staff-slider.leader label { color: var(--leader); }
+
+    .staff-slider .range-slider { height: 6px; }
+
+    .week-budget-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      background: rgba(56,189,248,0.06);
+      border: 1px solid rgba(56,189,248,0.15);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
+    .week-budget-bar strong { color: var(--cyan); font-family: var(--mono); }
+
+    .week-budget-track {
+      flex: 1;
+      min-width: 120px;
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .week-budget-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      transition: width 0.35s var(--ease);
+    }
+
+    .week-budget-fill.over { background: linear-gradient(90deg, var(--amber), var(--red)); }
+
     .hours-input-wrap {
       display: flex;
       flex-direction: column;
@@ -1548,7 +1674,7 @@
     <header class="hero">
       <div class="hero-badge"><span class="pulse"></span> Live calculations · updates as you type</div>
       <h1>Plan labor with <em>precision.</em></h1>
-      <p class="hero-sub">Enter sales per day part — the calculator builds your weekly budget, daily hour limits, and SPLH targets automatically.</p>
+      <p class="hero-sub">Set your weekly sales target, enter day-part sales, then slide labor hours — sliders stay within your weekly and per-part budgets.</p>
     </header>
 
     <div class="steps-nav">
@@ -1565,16 +1691,21 @@
           <div class="card-head">
             <div>
               <div class="card-title">Sales &amp; Labor Target</div>
-              <p class="card-desc">Weekly sales and labor budget auto-calculate from your day-part sales entries below.</p>
+              <p class="card-desc">Set your weekly sales target — it sets the total hour budget. Day-part sliders below cannot exceed this limit.</p>
             </div>
             <span class="card-tag">Step 1</span>
           </div>
 
           <div class="input-grid">
             <div class="field">
-              <label for="weekSales">Weekly Sales</label>
-              <input type="number" id="weekSales" value="0" min="0" step="1000" readonly tabindex="-1" />
-              <div class="hint">Auto-sum of all day-part sales you enter</div>
+              <label for="weekSales">Weekly Sales Target</label>
+              <input type="number" id="weekSales" value="125000" min="0" step="1000" />
+              <div class="hint">Drives total labor hour budget</div>
+            </div>
+            <div class="field">
+              <label for="weekSalesEntered">Entered (day parts)</label>
+              <input type="number" id="weekSalesEntered" value="0" min="0" step="1000" readonly tabindex="-1" />
+              <div class="hint">Auto-sum of day-part sales below</div>
             </div>
             <div class="field">
               <label for="targetSplh">Target SPLH</label>
@@ -1605,10 +1736,12 @@
           <div class="card-head">
             <div>
               <div class="card-title">Day-Part Staffing</div>
-              <p class="card-desc">Enter <strong style="color:var(--text)">sales $</strong> per day part — budget hrs = sales ÷ target SPLH. Staff with FOH / BOH / Leader sliders.</p>
+              <p class="card-desc">Enter <strong style="color:var(--text)">sales $</strong> per day part, then use the <strong style="color:var(--text)">labor sliders</strong> — capped by weekly budget and each part's sales budget.</p>
             </div>
             <span class="card-tag">Step 2</span>
           </div>
+
+          <div class="week-budget-bar" id="weekBudgetBar"></div>
 
           <div class="toolbar">
             <button class="btn btn-primary" id="copyMondayBtn"><span class="btn-icon">📋</span> Copy Monday → All Days</button>
@@ -1816,7 +1949,8 @@
     function serializeState() {
       const inp = getInputs();
       return {
-        weekSales: weekSalesEntered(inp),
+        weekSales: parseFloat($('weekSales').value) || 0,
+        weekSalesEntered: weekSalesEntered(inp),
         targetSplh: inp.targetSplh,
         trainingHours: inp.trainingHours,
         operatingDays: inp.operatingDays,
@@ -1830,6 +1964,7 @@
     function applyState(data) {
       if (!data) return;
 
+      $('weekSales').value = data.weekSales ?? 125000;
       $('targetSplh').value = data.targetSplh ?? 110;
       $('trainingHours').value = data.trainingHours ?? 100;
       $('operatingDays').value = data.operatingDays ?? 7;
@@ -1960,6 +2095,7 @@
       $('planName').value = '';
       $('planSelect').value = '';
       seedMonday();
+      $('weekSales').value = 125000;
       $('targetSplh').value = 110;
       $('trainingHours').value = 100;
       $('operatingDays').value = 7;
@@ -1999,24 +2135,90 @@
     }
 
     function calcBudget(inp) {
-      const weekSales = weekSalesEntered(inp);
-      const baseHours = weekSales / inp.targetSplh;
+      const weekSalesTarget = parseFloat($('weekSales').value) || 0;
+      const entered = weekSalesEntered(inp);
+      const baseHours = weekSalesTarget / inp.targetSplh;
       const limit = baseHours + inp.trainingHours;
-      return { weekSales, baseHours, limit };
+      return { weekSalesTarget, weekSalesEntered: entered, baseHours, limit };
     }
 
     function calcDailyBudget(inp, di) {
-      return dailySalesTotal(di) / inp.targetSplh + trainingPerDay(inp);
+      const daySales = dailySalesTotal(di);
+      if (daySales > 0) return daySales / inp.targetSplh + trainingPerDay(inp);
+      const b = calcBudget(inp);
+      return b.limit / inp.operatingDays;
     }
 
     function calcPartBudget(inp, di, partId) {
-      return partSales(di, partId) / inp.targetSplh;
+      const sales = partSales(di, partId);
+      if (sales > 0) return sales / inp.targetSplh;
+      return calcDailyBudget(inp, di) / DAYPARTS.length;
     }
 
-    function syncWeekSalesDisplay() {
+    function syncWeekSalesEnteredDisplay() {
       const inp = getInputs();
       const entered = weekSalesEntered(inp);
-      $('weekSales').value = entered > 0 ? Math.round(entered) : 0;
+      $('weekSalesEntered').value = entered > 0 ? Math.round(entered) : 0;
+    }
+
+    function distributeHeadcount(d, totalHc) {
+      const prev = (d.foh || 0) + (d.boh || 0) + (d.leader || 0);
+      if (totalHc <= 0) {
+        d.foh = d.boh = d.leader = 0;
+        return;
+      }
+      if (prev > 0) {
+        d.foh = Math.round(totalHc * (d.foh || 0) / prev);
+        d.boh = Math.round(totalHc * (d.boh || 0) / prev);
+        d.leader = Math.max(0, totalHc - d.foh - d.boh);
+      } else {
+        d.foh = Math.max(0, Math.round(totalHc * 0.4));
+        d.boh = Math.max(0, Math.round(totalHc * 0.45));
+        d.leader = Math.max(0, totalHc - d.foh - d.boh);
+      }
+    }
+
+    function getMaxPartLabor(inp, di, partId) {
+      const partBudget = calcPartBudget(inp, di, partId);
+      const b = calcBudget(inp);
+      const current = partHours(di, partId);
+      const weekRemaining = b.limit - weekHours() + current;
+      const dayBudget = calcDailyBudget(inp, di);
+      const dayRemaining = dayBudget - dayHours(di) + current;
+      return Math.max(0, Math.min(partBudget, dayRemaining, weekRemaining));
+    }
+
+    function clampPartStaffing(inp, di, partId) {
+      const d = staffData[di][partId];
+      let labor = partHours(di, partId);
+      const maxLabor = getMaxPartLabor(inp, di, partId);
+      while (labor > maxLabor + 0.05 && partHeadcount(d) > 0) {
+        if ((d.boh || 0) >= (d.foh || 0) && (d.boh || 0) >= (d.leader || 0) && d.boh > 0) d.boh--;
+        else if ((d.foh || 0) >= (d.leader || 0) && d.foh > 0) d.foh--;
+        else if (d.leader > 0) d.leader--;
+        else break;
+        labor = partHours(di, partId);
+      }
+    }
+
+    function setPartLaborHours(di, partId, targetHrs) {
+      const inp = getInputs();
+      const d = staffData[di][partId];
+      const shiftHrs = d.hours || defaultHours(partId);
+      if (shiftHrs <= 0) return;
+
+      const maxLabor = getMaxPartLabor(inp, di, partId);
+      const labor = Math.min(Math.max(0, targetHrs), maxLabor);
+      const totalHc = Math.max(0, Math.round(labor / shiftHrs));
+      distributeHeadcount(d, totalHc);
+      clampPartStaffing(inp, di, partId);
+    }
+
+    function setStaffField(di, partId, field, value) {
+      const inp = getInputs();
+      const d = staffData[di][partId];
+      d[field] = Math.max(0, Math.round(value));
+      clampPartStaffing(inp, di, partId);
     }
 
     function partHeadcount(d) {
@@ -2119,12 +2321,79 @@
       setTimeout(() => t.classList.remove('show'), 2400);
     }
 
+    function refreshDaypartCard(partId) {
+      const inp = getInputs();
+      const d = staffData[activeDay][partId];
+      const card = $('dayparts')?.querySelector(`.daypart-card[data-part="${partId}"]`);
+      if (!card) return;
+
+      const labor = partHours(activeDay, partId);
+      const maxLabor = getMaxPartLabor(inp, activeDay, partId);
+      const partBudget = calcPartBudget(inp, activeDay, partId);
+      const splh = partProductivity(inp, activeDay, partId);
+      const splhSt = splhStatus(splh, inp.targetSplh);
+      const overPartBudget = partBudget > 0 && labor > partBudget + 0.05;
+      const fohHc = d.foh || 0;
+      const bohHc = d.boh || 0;
+      const leaderHc = d.leader || 0;
+      const totalHc = partHeadcount(d);
+
+      const laborLabel = card.querySelector(`[data-labor-label="${partId}"]`);
+      if (laborLabel) {
+        laborLabel.textContent = `${fmt(labor,1)} / ${fmt(maxLabor,1)} max`;
+        laborLabel.classList.toggle('over', overPartBudget);
+      }
+
+      const fohSlider = card.querySelector('.staff-slider.foh .range-slider');
+      const bohSlider = card.querySelector('.staff-slider.boh .range-slider');
+      const leaderSlider = card.querySelector('.staff-slider.leader .range-slider');
+      if (fohSlider) fohSlider.value = fohHc;
+      if (bohSlider) bohSlider.value = bohHc;
+      if (leaderSlider) leaderSlider.value = leaderHc;
+
+      const fohVal = card.querySelector(`[data-foh-val="${partId}"]`);
+      const bohVal = card.querySelector(`[data-boh-val="${partId}"]`);
+      const leaderVal = card.querySelector(`[data-leader-val="${partId}"]`);
+      if (fohVal) fohVal.textContent = fohHc;
+      if (bohVal) bohVal.textContent = bohHc;
+      if (leaderVal) leaderVal.textContent = leaderHc;
+
+      const results = card.querySelectorAll('.dp-result');
+      if (results[0]) {
+        results[0].querySelector('.val').textContent = totalHc;
+        results[0].querySelector('.headcount-formula').textContent = `${fohHc} + ${bohHc} + ${leaderHc}`;
+      }
+      if (results[2]) {
+        results[2].querySelector('.val').textContent = fmt(labor, 1);
+        results[2].querySelector('.val').style.color = overPartBudget ? 'var(--red)' : 'var(--text)';
+      }
+      if (results[3]) {
+        results[3].querySelector('.val').textContent = labor > 0 ? fmtMoney(splh) : '—';
+        results[3].querySelector('.val').style.color = splhColor(splhSt);
+      }
+    }
+
+    function renderWeekBudgetBar() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const planned = weekHours();
+      const pct = b.limit > 0 ? Math.min((planned / b.limit) * 100, 100) : 0;
+      const remaining = b.limit - planned;
+      const over = planned > b.limit + 0.05;
+
+      $('weekBudgetBar').innerHTML = `
+        <span>Weekly budget: <strong>${fmt(b.limit, 1)} hrs</strong></span>
+        <div class="week-budget-track"><div class="week-budget-fill${over ? ' over' : ''}" style="width:${pct}%"></div></div>
+        <span>${fmt(planned, 1)} planned · <strong style="color:${remaining >= 0 ? 'var(--green)' : 'var(--red)'}">${remaining >= 0 ? '+' : ''}${fmt(remaining, 1)} left</strong></span>
+      `;
+    }
+
     function renderFormula() {
       const inp = getInputs();
       const b = calcBudget(inp);
       const activeDaily = calcDailyBudget(inp, activeDay);
       $('formulaStrip').innerHTML = `
-        <div class="formula-chip"><span>${fmtMoney(b.weekSales)}</span><span class="arrow">÷</span><span>${fmtMoney(inp.targetSplh)}/hr</span><span class="arrow">=</span><strong>${fmt(b.baseHours,0)} hrs</strong></div>
+        <div class="formula-chip"><span>${fmtMoney(b.weekSalesTarget)}</span><span class="arrow">÷</span><span>${fmtMoney(inp.targetSplh)}/hr</span><span class="arrow">=</span><strong>${fmt(b.baseHours,0)} hrs</strong></div>
         <div class="formula-chip"><span>+ Training</span><strong>${fmt(inp.trainingHours,0)} hrs</strong></div>
         <div class="formula-chip highlight"><span>Weekly Limit</span><strong>${fmt(b.limit,1)} hrs</strong></div>
         <div class="formula-chip highlight"><span>${DAYS[activeDay]} Budget</span><strong>${fmt(activeDaily,1)} hrs</strong></div>
@@ -2180,10 +2449,13 @@
         const partBudget = calcPartBudget(inp, activeDay, dp.id);
         const splh = partProductivity(inp, activeDay, dp.id);
         const splhSt = splhStatus(splh, inp.targetSplh);
+        const maxLabor = getMaxPartLabor(inp, activeDay, dp.id);
+        const sliderMax = Math.max(0.5, Math.ceil(Math.max(maxLabor, labor, partBudget) * 2) / 2);
         const overPartBudget = partBudget > 0 && labor > partBudget + 0.05;
 
         const card = document.createElement('div');
         card.className = 'daypart-card';
+        card.dataset.part = dp.id;
         card.innerHTML = `
           <div class="dp-info">
             <div class="dp-icon">${dp.icon}</div>
@@ -2197,32 +2469,29 @@
               <label>Sales $</label>
               <input class="sales-input" type="number" min="0" step="100" data-field="sales" data-part="${dp.id}" value="${salesVal || ''}" placeholder="0" />
             </div>
-            <div class="counter foh">
-              <span class="counter-label">FOH</span>
-              <div class="counter-row">
-                <button type="button" class="counter-btn" data-a="-1" data-field="foh" data-part="${dp.id}">−</button>
-                <input class="counter-val" type="number" min="0" data-field="foh" data-part="${dp.id}" value="${d.foh}" />
-                <button type="button" class="counter-btn" data-a="1" data-field="foh" data-part="${dp.id}">+</button>
+            <div class="labor-slider-wrap">
+              <div class="labor-slider-head">
+                <span>Labor Hrs</span>
+                <span class="labor-slider-val${overPartBudget ? ' over' : ''}" data-labor-label="${dp.id}">${fmt(labor,1)} / ${fmt(maxLabor,1)} max</span>
               </div>
+              <input class="range-slider labor-range" type="range" min="0" max="${sliderMax}" step="0.5" data-part="${dp.id}" value="${Math.min(labor, sliderMax)}" />
             </div>
-            <div class="counter boh">
-              <span class="counter-label">BOH</span>
-              <div class="counter-row">
-                <button type="button" class="counter-btn" data-a="-1" data-field="boh" data-part="${dp.id}">−</button>
-                <input class="counter-val" type="number" min="0" data-field="boh" data-part="${dp.id}" value="${d.boh}" />
-                <button type="button" class="counter-btn" data-a="1" data-field="boh" data-part="${dp.id}">+</button>
+            <div class="staff-sliders">
+              <div class="staff-slider foh">
+                <label>FOH <span data-foh-val="${dp.id}">${fohHc}</span></label>
+                <input class="range-slider foh" type="range" min="0" max="25" step="1" data-field="foh" data-part="${dp.id}" value="${fohHc}" />
               </div>
-            </div>
-            <div class="counter leader">
-              <span class="counter-label">Leader</span>
-              <div class="counter-row">
-                <button type="button" class="counter-btn" data-a="-1" data-field="leader" data-part="${dp.id}">−</button>
-                <input class="counter-val" type="number" min="0" data-field="leader" data-part="${dp.id}" value="${d.leader}" />
-                <button type="button" class="counter-btn" data-a="1" data-field="leader" data-part="${dp.id}">+</button>
+              <div class="staff-slider boh">
+                <label>BOH <span data-boh-val="${dp.id}">${bohHc}</span></label>
+                <input class="range-slider boh" type="range" min="0" max="25" step="1" data-field="boh" data-part="${dp.id}" value="${bohHc}" />
+              </div>
+              <div class="staff-slider leader">
+                <label>Leader <span data-leader-val="${dp.id}">${leaderHc}</span></label>
+                <input class="range-slider leader" type="range" min="0" max="10" step="1" data-field="leader" data-part="${dp.id}" value="${leaderHc}" />
               </div>
             </div>
             <div class="hours-input-wrap">
-              <label>Hrs</label>
+              <label>Shift Hrs</label>
               <input class="hours-input" type="number" min="0" step="0.5" data-field="hours" data-part="${dp.id}" value="${d.hours}" />
             </div>
             <div class="dp-results">
@@ -2249,19 +2518,38 @@
         wrap.appendChild(card);
       });
 
-      wrap.querySelectorAll('.counter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const part = btn.dataset.part;
-          const field = btn.dataset.field;
-          const delta = parseInt(btn.dataset.a);
-          staffData[activeDay][part][field] = Math.max(0, (staffData[activeDay][part][field] || 0) + delta);
-          renderAll();
+      wrap.querySelectorAll('.labor-range').forEach(slider => {
+        slider.addEventListener('input', () => {
+          setPartLaborHours(activeDay, slider.dataset.part, parseFloat(slider.value) || 0);
+          refreshDaypartCard(slider.dataset.part);
+          renderWeekBudgetBar();
+          renderDaySummary();
+          renderLivePanel();
         });
+        slider.addEventListener('change', () => renderAll());
       });
 
-      wrap.querySelectorAll('.counter-val, .hours-input').forEach(input => {
+      wrap.querySelectorAll('.staff-slider .range-slider').forEach(slider => {
+        slider.addEventListener('input', () => {
+          setStaffField(activeDay, slider.dataset.part, slider.dataset.field, parseFloat(slider.value) || 0);
+          const part = slider.dataset.part;
+          const card = wrap.querySelector(`[data-part="${part}"]`);
+          const d = staffData[activeDay][part];
+          const labor = partHours(activeDay, part);
+          const laborSlider = card?.querySelector('.labor-range');
+          if (laborSlider) laborSlider.value = labor;
+          refreshDaypartCard(part);
+          renderWeekBudgetBar();
+          renderDaySummary();
+          renderLivePanel();
+        });
+        slider.addEventListener('change', () => renderAll());
+      });
+
+      wrap.querySelectorAll('.hours-input').forEach(input => {
         input.addEventListener('input', () => {
           staffData[activeDay][input.dataset.part][input.dataset.field] = parseFloat(input.value) || 0;
+          clampPartStaffing(getInputs(), activeDay, input.dataset.part);
           renderAll();
         });
       });
@@ -2269,6 +2557,7 @@
       wrap.querySelectorAll('.sales-input').forEach(input => {
         input.addEventListener('input', () => {
           partSalesData[activeDay][input.dataset.part] = parseFloat(input.value) || 0;
+          clampPartStaffing(getInputs(), activeDay, input.dataset.part);
           renderAll();
         });
       });
@@ -2498,8 +2787,8 @@
       ).reduce((a, c) => a + c, 0);
 
       let rows = `
-        <li><span class="key">Weekly Sales</span><span class="val" style="color:var(--cyan)">${fmtMoney(enteredWeekSales)}</span></li>
-        <li><span class="key">From day-part entries</span><span class="val" style="color:var(--muted)">auto-calculated</span></li>
+        <li><span class="key">Weekly Sales (target)</span><span class="val">${fmtMoney(b.weekSalesTarget)}</span></li>
+        <li><span class="key">Weekly Sales (entered)</span><span class="val" style="color:${enteredWeekSales >= b.weekSalesTarget ? 'var(--green)' : 'var(--amber)'}">${fmtMoney(enteredWeekSales)}</span></li>
         <li><span class="key">Target SPLH</span><span class="val">${fmtMoney(inp.targetSplh)}/hr</span></li>
         <li><span class="key">Base Labor Hours</span><span class="val">${fmt(b.baseHours,1)} hrs</span></li>
         <li><span class="key">+ Training Buffer</span><span class="val" style="color:var(--amber)">+${fmt(inp.trainingHours,0)} hrs</span></li>
@@ -2547,8 +2836,9 @@
     }
 
     function renderAll() {
-      syncWeekSalesDisplay();
+      syncWeekSalesEnteredDisplay();
       renderFormula();
+      renderWeekBudgetBar();
       renderDayPicker();
       renderDayparts();
       renderWeekChart();
@@ -2557,7 +2847,7 @@
       renderBreakdown();
     }
 
-    ['targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
+    ['weekSales','targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
       $(id).addEventListener('input', renderAll);
     });
 
