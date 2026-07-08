@@ -388,6 +388,12 @@
       outline: none;
     }
 
+    .field input[readonly] {
+      opacity: 0.9;
+      cursor: default;
+      color: var(--cyan);
+    }
+
     .field .hint {
       font-size: 11px;
       color: var(--muted);
@@ -1542,7 +1548,7 @@
     <header class="hero">
       <div class="hero-badge"><span class="pulse"></span> Live calculations · updates as you type</div>
       <h1>Plan labor with <em>precision.</em></h1>
-      <p class="hero-sub">Set your weekly sales target, build your day-part staffing, and instantly see productivity, budget usage, and daily hour limits.</p>
+      <p class="hero-sub">Enter sales per day part — the calculator builds your weekly budget, daily hour limits, and SPLH targets automatically.</p>
     </header>
 
     <div class="steps-nav">
@@ -1559,7 +1565,7 @@
           <div class="card-head">
             <div>
               <div class="card-title">Sales &amp; Labor Target</div>
-              <p class="card-desc">Your labor hours limit = sales ÷ target SPLH + training buffer.</p>
+              <p class="card-desc">Weekly sales and labor budget auto-calculate from your day-part sales entries below.</p>
             </div>
             <span class="card-tag">Step 1</span>
           </div>
@@ -1567,8 +1573,8 @@
           <div class="input-grid">
             <div class="field">
               <label for="weekSales">Weekly Sales</label>
-              <input type="number" id="weekSales" value="125000" min="0" step="1000" />
-              <div class="hint">Total projected week revenue</div>
+              <input type="number" id="weekSales" value="0" min="0" step="1000" readonly tabindex="-1" />
+              <div class="hint">Auto-sum of all day-part sales you enter</div>
             </div>
             <div class="field">
               <label for="targetSplh">Target SPLH</label>
@@ -1599,7 +1605,7 @@
           <div class="card-head">
             <div>
               <div class="card-title">Day-Part Staffing</div>
-              <p class="card-desc">Enter <strong style="color:var(--text)">sales $</strong> and staff each day part with FOH / BOH / Leader sliders. Labor hrs = (FOH + BOH + Leaders) × hours.</p>
+              <p class="card-desc">Enter <strong style="color:var(--text)">sales $</strong> per day part — budget hrs = sales ÷ target SPLH. Staff with FOH / BOH / Leader sliders.</p>
             </div>
             <span class="card-tag">Step 2</span>
           </div>
@@ -1629,6 +1635,7 @@
                     <th>BOH</th>
                     <th>Ldr</th>
                     <th>Total HC</th>
+                    <th>Budget Hrs</th>
                     <th>Labor Hrs</th>
                     <th>SPLH</th>
                     <th>vs Target</th>
@@ -1809,7 +1816,7 @@
     function serializeState() {
       const inp = getInputs();
       return {
-        weekSales: inp.weekSales,
+        weekSales: weekSalesEntered(inp),
         targetSplh: inp.targetSplh,
         trainingHours: inp.trainingHours,
         operatingDays: inp.operatingDays,
@@ -1823,7 +1830,6 @@
     function applyState(data) {
       if (!data) return;
 
-      $('weekSales').value = data.weekSales ?? 125000;
       $('targetSplh').value = data.targetSplh ?? 110;
       $('trainingHours').value = data.trainingHours ?? 100;
       $('operatingDays').value = data.operatingDays ?? 7;
@@ -1954,7 +1960,6 @@
       $('planName').value = '';
       $('planSelect').value = '';
       seedMonday();
-      $('weekSales').value = 125000;
       $('targetSplh').value = 110;
       $('trainingHours').value = 100;
       $('operatingDays').value = 7;
@@ -1989,11 +1994,29 @@
       }
     }
 
+    function trainingPerDay(inp) {
+      return inp.trainingHours / inp.operatingDays;
+    }
+
     function calcBudget(inp) {
-      const baseHours = inp.weekSales / inp.targetSplh;
+      const weekSales = weekSalesEntered(inp);
+      const baseHours = weekSales / inp.targetSplh;
       const limit = baseHours + inp.trainingHours;
-      const dailyBudget = limit / inp.operatingDays;
-      return { baseHours, limit, dailyBudget };
+      return { weekSales, baseHours, limit };
+    }
+
+    function calcDailyBudget(inp, di) {
+      return dailySalesTotal(di) / inp.targetSplh + trainingPerDay(inp);
+    }
+
+    function calcPartBudget(inp, di, partId) {
+      return partSales(di, partId) / inp.targetSplh;
+    }
+
+    function syncWeekSalesDisplay() {
+      const inp = getInputs();
+      const entered = weekSalesEntered(inp);
+      $('weekSales').value = entered > 0 ? Math.round(entered) : 0;
     }
 
     function partHeadcount(d) {
@@ -2099,27 +2122,29 @@
     function renderFormula() {
       const inp = getInputs();
       const b = calcBudget(inp);
+      const activeDaily = calcDailyBudget(inp, activeDay);
       $('formulaStrip').innerHTML = `
-        <div class="formula-chip"><span>${fmtMoney(inp.weekSales)}</span><span class="arrow">÷</span><span>${fmtMoney(inp.targetSplh)}/hr</span><span class="arrow">=</span><strong>${fmt(b.baseHours,0)} hrs</strong></div>
+        <div class="formula-chip"><span>${fmtMoney(b.weekSales)}</span><span class="arrow">÷</span><span>${fmtMoney(inp.targetSplh)}/hr</span><span class="arrow">=</span><strong>${fmt(b.baseHours,0)} hrs</strong></div>
         <div class="formula-chip"><span>+ Training</span><strong>${fmt(inp.trainingHours,0)} hrs</strong></div>
         <div class="formula-chip highlight"><span>Weekly Limit</span><strong>${fmt(b.limit,1)} hrs</strong></div>
-        <div class="formula-chip highlight"><span>Daily Budget</span><strong>${fmt(b.dailyBudget,1)} hrs</strong></div>
+        <div class="formula-chip highlight"><span>${DAYS[activeDay]} Budget</span><strong>${fmt(activeDaily,1)} hrs</strong></div>
       `;
     }
 
     function renderDayPicker() {
       const inp = getInputs();
-      const b = calcBudget(inp);
-      const maxH = Math.max(b.dailyBudget, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
+      const dayBudgets = Array.from({ length: inp.operatingDays }, (_, i) => calcDailyBudget(inp, i));
+      const maxH = Math.max(...dayBudgets, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
       const picker = $('dayPicker');
       picker.innerHTML = '';
 
       for (let i = 0; i < inp.operatingDays; i++) {
         const hrs = dayHours(i);
+        const dayBudget = dayBudgets[i];
         const splh = dailyProductivity(inp, i);
         const splhSt = splhStatus(splh, inp.targetSplh);
         const pct = Math.min((hrs / maxH) * 100, 100);
-        const over = hrs > b.dailyBudget + 0.05;
+        const over = dayBudget > 0 && hrs > dayBudget + 0.05;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'day-btn' + (i === activeDay ? ' active' : '') + (over ? ' over' : '');
@@ -2152,8 +2177,10 @@
         const totalHc = partHeadcount(d);
         const labor = totalHc * (d.hours||0);
         const salesVal = partSales(activeDay, dp.id);
+        const partBudget = calcPartBudget(inp, activeDay, dp.id);
         const splh = partProductivity(inp, activeDay, dp.id);
         const splhSt = splhStatus(splh, inp.targetSplh);
+        const overPartBudget = partBudget > 0 && labor > partBudget + 0.05;
 
         const card = document.createElement('div');
         card.className = 'daypart-card';
@@ -2205,8 +2232,12 @@
                 <div class="headcount-formula">${fohHc} + ${bohHc} + ${leaderHc}</div>
               </div>
               <div class="dp-result">
+                <div class="lbl">Budget</div>
+                <div class="val" style="color:var(--cyan)">${salesVal > 0 ? fmt(partBudget, 1) : '—'}</div>
+              </div>
+              <div class="dp-result">
                 <div class="lbl">Labor</div>
-                <div class="val">${fmt(labor,1)}</div>
+                <div class="val" style="color:${overPartBudget ? 'var(--red)' : 'var(--text)'}">${fmt(labor,1)}</div>
               </div>
               <div class="dp-result splh">
                 <div class="lbl">SPLH</div>
@@ -2247,9 +2278,9 @@
 
     function renderDaySummary() {
       const inp = getInputs();
-      const b = calcBudget(inp);
+      const dayBudget = calcDailyBudget(inp, activeDay);
       const total = dayHours(activeDay);
-      const diff = b.dailyBudget - total;
+      const diff = dayBudget - total;
       const daySplh = dailyProductivity(inp, activeDay);
       const daySplhSt = splhStatus(daySplh, inp.targetSplh);
       const fohHrs = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].foh||0) * (staffData[activeDay][dp.id].hours||0), 0);
@@ -2269,6 +2300,7 @@
         <div class="sum-pill"><div class="lbl">FOH Hours</div><div class="val" style="color:var(--foh)">${fmt(fohHrs,1)}</div></div>
         <div class="sum-pill"><div class="lbl">BOH Hours</div><div class="val" style="color:var(--boh)">${fmt(bohHrs,1)}</div></div>
         <div class="sum-pill"><div class="lbl">Leader Hours</div><div class="val" style="color:var(--leader)">${fmt(leaderHrs,1)}</div></div>
+        <div class="sum-pill"><div class="lbl">Day Budget</div><div class="val" style="color:var(--cyan)">${fmt(dayBudget,1)}</div></div>
         <div class="sum-pill"><div class="lbl">Day Total Hrs</div><div class="val">${fmt(total,1)}</div></div>
         <div class="sum-pill"><div class="lbl">vs Budget</div><div class="val" style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>=0?'+':''}${fmt(diff,1)}</div></div>
       `;
@@ -2294,6 +2326,7 @@
         sumLeaderHc += leaderHc;
         const labor = partHours(activeDay, dp.id);
         const sales = partSales(activeDay, dp.id);
+        const partBudget = calcPartBudget(inp, activeDay, dp.id);
         const splh = partProductivity(inp, activeDay, dp.id);
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -2303,7 +2336,8 @@
           <td style="color:var(--boh)">${bohHc}</td>
           <td style="color:var(--leader)">${leaderHc}</td>
           <td style="font-weight:700;color:var(--violet)">${totalHc}</td>
-          <td>${fmt(labor, 1)}</td>
+          <td style="color:var(--cyan)">${sales > 0 ? fmt(partBudget, 1) : '—'}</td>
+          <td style="color:${partBudget > 0 && labor > partBudget + 0.05 ? 'var(--red)' : 'var(--text)'}">${fmt(labor, 1)}</td>
           <td style="color:${splhColor(splhStatus(splh, inp.targetSplh))}">${labor > 0 ? fmtMoney(splh) + '/hr' : '—'}</td>
           <td>${splhBadge(splh, inp.targetSplh)}</td>
         `;
@@ -2312,6 +2346,7 @@
 
       const daySplh = dailyProductivity(inp, activeDay);
       const totalHrs = dayHours(activeDay);
+      const dayBudget = calcDailyBudget(inp, activeDay);
       const trTotal = document.createElement('tr');
       trTotal.style.background = 'rgba(56,189,248,0.05)';
       trTotal.innerHTML = `
@@ -2321,6 +2356,7 @@
         <td style="color:var(--boh)"><strong>${sumBohHc}</strong></td>
         <td style="color:var(--leader)"><strong>${sumLeaderHc}</strong></td>
         <td style="color:var(--violet)"><strong>${sumFohHc + sumBohHc + sumLeaderHc}</strong></td>
+        <td style="color:var(--cyan)"><strong>${fmt(dayBudget, 1)}</strong></td>
         <td><strong>${fmt(totalHrs, 1)}</strong></td>
         <td style="color:${splhColor(splhStatus(daySplh, inp.targetSplh))}"><strong>${totalHrs > 0 ? fmtMoney(daySplh) + '/hr' : '—'}</strong></td>
         <td>${splhBadge(daySplh, inp.targetSplh)}</td>
@@ -2352,21 +2388,22 @@
 
     function renderWeekChart() {
       const inp = getInputs();
-      const b = calcBudget(inp);
-      const maxH = Math.max(b.dailyBudget, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
-      const budgetPct = (b.dailyBudget / maxH) * 90;
+      const dayBudgets = Array.from({ length: inp.operatingDays }, (_, i) => calcDailyBudget(inp, i));
+      const maxH = Math.max(...dayBudgets, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
 
       $('weekChart').innerHTML = '';
       for (let i = 0; i < inp.operatingDays; i++) {
         const hrs = dayHours(i);
+        const dayBudget = dayBudgets[i];
         const h = Math.max((hrs / maxH) * 90, 4);
-        const over = hrs > b.dailyBudget + 0.05;
+        const budgetPct = (dayBudget / maxH) * 90;
+        const over = dayBudget > 0 && hrs > dayBudget + 0.05;
         const col = document.createElement('div');
         col.className = 'chart-col';
         col.innerHTML = `
           <div class="chart-bar-wrap">
             <div class="chart-budget-line" style="bottom:${budgetPct}px"></div>
-            <div class="chart-bar${over?' over':''}" style="height:${h}px" title="${fmt(hrs,1)}h planned / ${fmt(b.dailyBudget,1)}h budget"></div>
+            <div class="chart-bar${over?' over':''}" style="height:${h}px" title="${fmt(hrs,1)}h planned / ${fmt(dayBudget,1)}h budget"></div>
           </div>
           <span class="chart-lbl">${DAYS[i]}</span>
         `;
@@ -2416,8 +2453,10 @@
       const productivity = planned > 0 ? enteredWeekSales / planned : 0;
       const spentPct = b.limit > 0 ? (planned / b.limit) * 100 : 0;
 
+      const activeDaily = calcDailyBudget(inp, activeDay);
+
       animateVal($('liveLimit'), b.limit, v => fmt(v, 1));
-      animateVal($('liveDaily'), b.dailyBudget, v => fmt(v, 1));
+      animateVal($('liveDaily'), activeDaily, v => fmt(v, 1));
       animateVal($('livePlanned'), planned, v => fmt(v, 1));
       animateVal($('liveRemaining'), remaining, v => (v >= 0 ? '+' : '') + fmt(v, 1));
 
@@ -2444,7 +2483,7 @@
       const productivity = planned > 0 ? enteredWeekSales / planned : 0;
       const spentPct = b.limit > 0 ? (planned / b.limit) * 100 : 0;
       const laborCost = planned * inp.avgWage;
-      const laborPct = inp.weekSales > 0 ? (laborCost / inp.weekSales) * 100 : 0;
+      const laborPct = enteredWeekSales > 0 ? (laborCost / enteredWeekSales) * 100 : 0;
 
       const fohWeek = Array.from({length: inp.operatingDays}, (_, i) =>
         DAYPARTS.reduce((s, dp) => s + (staffData[i][dp.id].foh||0) * (staffData[i][dp.id].hours||0), 0)
@@ -2459,8 +2498,8 @@
       ).reduce((a, c) => a + c, 0);
 
       let rows = `
-        <li><span class="key">Weekly Sales (target)</span><span class="val">${fmtMoney(inp.weekSales)}</span></li>
-        <li><span class="key">Weekly Sales (entered)</span><span class="val" style="color:${enteredWeekSales >= inp.weekSales ? 'var(--green)' : 'var(--amber)'}">${fmtMoney(enteredWeekSales)}</span></li>
+        <li><span class="key">Weekly Sales</span><span class="val" style="color:var(--cyan)">${fmtMoney(enteredWeekSales)}</span></li>
+        <li><span class="key">From day-part entries</span><span class="val" style="color:var(--muted)">auto-calculated</span></li>
         <li><span class="key">Target SPLH</span><span class="val">${fmtMoney(inp.targetSplh)}/hr</span></li>
         <li><span class="key">Base Labor Hours</span><span class="val">${fmt(b.baseHours,1)} hrs</span></li>
         <li><span class="key">+ Training Buffer</span><span class="val" style="color:var(--amber)">+${fmt(inp.trainingHours,0)} hrs</span></li>
@@ -2485,10 +2524,11 @@
       // Daily rows
       for (let i = 0; i < inp.operatingDays; i++) {
         const pd = dayHours(i);
-        const diff = b.dailyBudget - pd;
+        const dayBudget = calcDailyBudget(inp, i);
+        const diff = dayBudget - pd;
         const dSplh = dailyProductivity(inp, i);
         const dSt = splhStatus(dSplh, inp.targetSplh);
-        rows += `<li><span class="key">${DAYS_FULL[i]}</span><span class="val" style="color:${diff>=0?'var(--muted)':'var(--red)'}">${fmtMoney(dailySalesTotal(i))} sales · ${fmt(pd,1)} hrs <span style="opacity:0.6">(${diff>=0?'+':''}${fmt(diff,1)})</span> · <span style="color:${splhColor(dSt)}">${pd > 0 ? fmtMoney(dSplh) + '/hr' : '—'}</span></span></li>`;
+        rows += `<li><span class="key">${DAYS_FULL[i]}</span><span class="val" style="color:${diff>=0?'var(--muted)':'var(--red)'}">${fmtMoney(dailySalesTotal(i))} sales · ${fmt(pd,1)} / ${fmt(dayBudget,1)} hrs <span style="opacity:0.6">(${diff>=0?'+':''}${fmt(diff,1)})</span> · <span style="color:${splhColor(dSt)}">${pd > 0 ? fmtMoney(dSplh) + '/hr' : '—'}</span></span></li>`;
       }
 
       $('weeklyBreakdown').innerHTML = rows;
@@ -2507,6 +2547,7 @@
     }
 
     function renderAll() {
+      syncWeekSalesDisplay();
       renderFormula();
       renderDayPicker();
       renderDayparts();
@@ -2516,7 +2557,7 @@
       renderBreakdown();
     }
 
-    ['weekSales','targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
+    ['targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
       $(id).addEventListener('input', renderAll);
     });
 
