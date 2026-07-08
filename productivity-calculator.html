@@ -1858,10 +1858,7 @@
         Object.assign(staffData[0][dp.id], staff[dp.id]);
         partSalesData[0][dp.id] = sales[dp.id];
       });
-      syncPctFromDaySales(0);
     }
-    seedMonday();
-    distributeWeeklySales();
 
     const $ = id => document.getElementById(id);
     const fmt = (n, d = 1) => isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
@@ -2755,6 +2752,8 @@
     }, { threshold: 0.35 });
     sections.forEach(s => s && obs.observe(s));
 
+    seedMonday();
+    distributeWeeklySales();
     renderAll();
     initCloud();
   </script>
