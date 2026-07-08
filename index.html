@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Joshua Vinziant — Chick-fil-A Systems Planner. Custom BOH command centers, shift deployment engines, scheduling systems, and operational dashboards for restaurant leaders." />
+  <title>Vinziant Systems | Chick-fil-A Operations Planning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #E31837;
+      --red-deep: #9B0F28;
+      --red-glow: rgba(227, 24, 55, 0.35);
+      --gold: #F5C518;
+      --gold-soft: rgba(245, 197, 24, 0.15);
+      --ink: #0C0F14;
+      --ink-2: #151A24;
+      --ink-3: #1E2533;
+      --slate: #8B95A8;
+      --mist: #C8D0DC;
+      --paper: #F4F1EC;
+      --white: #FFFFFF;
+      --line: rgba(255,255,255,0.08);
+      --line-dark: rgba(0,0,0,0.08);
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 24px 80px rgba(0,0,0,0.35);
+      --shadow-soft: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      background: var(--ink);
+      color: var(--paper);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Grain overlay */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Scroll progress */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      z-index: 200;
+      width: 0%;
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 0 clamp(20px, 4vw, 48px);
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s;
+    }
+
+    nav.scrolled {
+      background: rgba(12, 15, 20, 0.82);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--paper);
+    }
+
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: -0.5px;
+      box-shadow: 0 4px 20px var(--red-glow);
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--slate);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--mist);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 999px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+
+    .nav-cta {
+      background: var(--red) !important;
+      color: var(--white) !important;
+      font-weight: 700 !important;
+      box-shadow: 0 4px 24px var(--red-glow);
+    }
+
+    .nav-cta:hover {
+      background: var(--red-deep) !important;
+      transform: translateY(-1px);
+    }
+
+    .menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .menu-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--paper);
+      margin: 5px 0;
+      border-radius: 2px;
+      transition: transform 0.25s, opacity 0.25s;
+    }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      padding: 120px clamp(20px, 5vw, 64px) 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .hero-orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--red-glow) 0%, transparent 70%);
+      top: -200px; right: -100px;
+    }
+
+    .hero-orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, var(--gold-soft) 0%, transparent 70%);
+      bottom: -100px; left: -80px;
+      animation-delay: -4s;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 80%);
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 28px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .hero-badge .dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    .hero h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(3rem, 6vw, 5.2rem);
+      font-weight: 400;
+      line-height: 1.02;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--red);
+      display: block;
+    }
+
+    .hero-lead {
+      font-size: 1.15rem;
+      color: var(--slate);
+      max-width: 480px;
+      margin-bottom: 36px;
+      line-height: 1.7;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 28px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--red);
+      color: var(--white);
+      box-shadow: 0 8px 32px var(--red-glow);
+    }
+
+    .btn-primary:hover { box-shadow: 0 12px 40px var(--red-glow); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--paper);
+      border: 1px solid var(--line);
+    }
+
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    /* Hero visual — dashboard mock */
+    .hero-visual {
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.9s 0.2s ease both;
+    }
+
+    .dashboard-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      transform: perspective(1200px) rotateY(-8deg) rotateX(4deg);
+      transition: transform 0.5s ease;
+    }
+
+    .dashboard-card:hover {
+      transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
+    }
+
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dash-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--mist);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .dash-live {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #4ADE80;
+      font-weight: 600;
+    }
+
+    .dash-live::before {
+      content: "";
+      width: 6px; height: 6px;
+      background: #4ADE80;
+      border-radius: 50%;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    .dash-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      background: var(--ink-3);
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-value.green { color: #4ADE80; }
+    .metric-value.gold { color: var(--gold); }
+    .metric-value.red { color: var(--red); }
+
+    .dash-positions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pos-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 48px;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .pos-name { color: var(--mist); font-weight: 600; }
+
+    .pos-bar {
+      height: 6px;
+      background: var(--ink);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .pos-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      animation: growBar 1.5s ease both;
+    }
+
+    .pos-pct { text-align: right; color: var(--slate); font-weight: 700; }
+
+    .float-card {
+      position: absolute;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow-soft);
+      font-size: 12px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .float-card-1 {
+      top: -20px; right: -30px;
+      animation-delay: -2s;
+    }
+
+    .float-card-2 {
+      bottom: 40px; left: -40px;
+      animation-delay: -5s;
+    }
+
+    .float-card strong { display: block; color: var(--gold); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+
+    /* Marquee */
+    .marquee-wrap {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: var(--ink-2);
+      padding: 18px 0;
+      overflow: hidden;
+    }
+
+    .marquee {
+      display: flex;
+      gap: 48px;
+      animation: marquee 30s linear infinite;
+      white-space: nowrap;
+    }
+
+    .marquee span {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--slate);
+    }
+
+    .marquee span::before {
+      content: "◆";
+      color: var(--red);
+      margin-right: 48px;
+    }
+
+    /* Sections */
+    section { padding: 100px clamp(20px, 5vw, 64px); }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      color: var(--slate);
+      font-size: 1.05rem;
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* Services bento */
+    .services { background: var(--ink); }
+
+    .services-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 56px;
+    }
+
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .bento-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(227,24,55,0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .bento-card:hover {
+      border-color: rgba(227,24,55,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .bento-card:hover::before { opacity: 1; }
+
+    .bento-card.span-7 { grid-column: span 7; }
+    .bento-card.span-5 { grid-column: span 5; }
+    .bento-card.span-4 { grid-column: span 4; }
+    .bento-card.span-8 { grid-column: span 8; }
+
+    .bento-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: rgba(227,24,55,0.12);
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .bento-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .bento-card p {
+      color: var(--slate);
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .bento-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--mist);
+      border: 1px solid var(--line);
+    }
+
+    /* Process */
+    .process { background: var(--paper); color: var(--ink); }
+
+    .process .section-label { color: var(--red-deep); }
+    .process .section-sub { color: #5a6270; }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 56px;
+    }
+
+    .step {
+      position: relative;
+      padding-top: 48px;
+    }
+
+    .step-num {
+      position: absolute;
+      top: 0; left: 0;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 4rem;
+      line-height: 1;
+      color: rgba(227,24,55,0.12);
+      font-weight: 400;
+    }
+
+    .step h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .step p {
+      font-size: 0.9rem;
+      color: #5a6270;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    /* Portfolio */
+    .portfolio { background: var(--ink-2); }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 56px;
+    }
+
+    a.project-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      cursor: pointer;
+    }
+
+    .project-card {
+      background: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .project-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow);
+      border-color: rgba(227, 24, 55, 0.35);
+    }
+
+    .project-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--red);
+      transition: gap 0.2s;
+    }
+
+    .project-card:hover .project-open { gap: 10px; }
+
+    .project-path {
+      font-size: 0.72rem;
+      color: var(--slate);
+      margin-top: 8px;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      opacity: 0.7;
+      word-break: break-all;
+    }
+
+    .project-links-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .project-links-row .project-open { margin-top: 0; }
+
+    .bento-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+      transition: gap 0.2s, color 0.2s;
+    }
+
+    .bento-link:hover { gap: 10px; color: #ff4d6a; }
+
+    .hero-dashboard-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .hero-dashboard-link:hover .dashboard-card {
+      border-color: rgba(227, 24, 55, 0.4);
+    }
+
+    .project-preview {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-preview.red { background: linear-gradient(135deg, #2a0f14 0%, #1a0a0d 100%); }
+    .project-preview.blue { background: linear-gradient(135deg, #0f1a2a 0%, #0a1018 100%); }
+    .project-preview.gold { background: linear-gradient(135deg, #2a2410 0%, #1a1808 100%); }
+
+    .project-body { padding: 24px; }
+
+    .project-body h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .project-body p {
+      font-size: 0.88rem;
+      color: var(--slate);
+      line-height: 1.6;
+    }
+
+    .project-meta {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .project-meta span {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--red);
+    }
+
+    /* About */
+    .about {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 64px;
+      align-items: center;
+      background: var(--ink);
+    }
+
+    .about-visual {
+      position: relative;
+    }
+
+    .about-frame {
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+    }
+
+    .about-frame::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 24px;
+      padding: 1px;
+      background: linear-gradient(135deg, var(--red), transparent, var(--gold));
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .about-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .about-stat {
+      text-align: center;
+      padding: 20px;
+      background: var(--ink-3);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .about-stat .num {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 2.8rem;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .about-stat .lbl {
+      font-size: 11px;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 6px;
+    }
+
+    .about-content .section-sub { margin-bottom: 24px; }
+
+    .about-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .about-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: var(--mist);
+    }
+
+    .about-list li::before {
+      content: "✓";
+      color: var(--red);
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    /* Pricing / packages */
+    .packages { background: var(--ink-2); }
+
+    .package-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 56px;
+    }
+
+    .package {
+      background: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      position: relative;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .package:hover { transform: translateY(-4px); }
+
+    .package.featured {
+      border-color: var(--red);
+      box-shadow: 0 0 60px var(--red-glow);
+    }
+
+    .package.featured::before {
+      content: "Most Popular";
+      position: absolute;
+      top: -12px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--red);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 999px;
+    }
+
+    .package-tier {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--slate);
+      margin-bottom: 8px;
+    }
+
+    .package h3 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .package-desc {
+      font-size: 0.9rem;
+      color: var(--slate);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .package ul {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+
+    .package ul li {
+      font-size: 0.88rem;
+      color: var(--mist);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+    }
+
+    .package ul li::before {
+      content: "→";
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .package .btn { width: 100%; justify-content: center; }
+
+    /* CTA */
+    .cta {
+      background: linear-gradient(135deg, var(--red-deep) 0%, var(--red) 50%, #c41e3a 100%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .cta-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+
+    .cta h2 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+
+    .cta .btn-primary {
+      background: var(--white);
+      color: var(--red);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .cta-email {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .cta-email a {
+      color: var(--white);
+      font-weight: 700;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--ink);
+      border-top: 1px solid var(--line);
+      padding: 48px clamp(20px, 5vw, 64px) 32px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand p {
+      color: var(--slate);
+      font-size: 0.9rem;
+      margin-top: 12px;
+      max-width: 320px;
+      line-height: 1.65;
+    }
+
+    .footer-col h4 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--mist);
+      margin-bottom: 16px;
+    }
+
+    .footer-col a {
+      display: block;
+      color: var(--slate);
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 4px 0;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover { color: var(--paper); }
+
+    .footer-bottom {
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--slate);
+    }
+
+    .disclaimer {
+      font-size: 0.78rem;
+      color: var(--slate);
+      line-height: 1.6;
+      max-width: 600px;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* Reveal animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Keyframes */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    @keyframes growBar {
+      from { width: 0; }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 100px; }
+      .hero-visual { max-width: 520px; margin: 0 auto; }
+      .bento-card.span-7, .bento-card.span-5, .bento-card.span-4, .bento-card.span-8 { grid-column: span 12; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .portfolio-grid, .package-grid { grid-template-columns: 1fr; }
+      .about { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .menu-btn { display: block; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        inset: 72px 0 0 0;
+        background: var(--ink);
+        padding: 24px;
+        gap: 4px;
+        border-top: 1px solid var(--line);
+      }
+      .steps { grid-template-columns: 1fr; }
+      .dash-metrics { grid-template-columns: 1fr; }
+      .float-card { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress"></div>
+
+  <nav id="nav">
+    <a href="#" class="logo">
+      <div class="logo-mark">VS</div>
+      <div class="logo-text">
+        Vinziant Systems
+        <span>Chick-fil-A Operations</span>
+      </div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#packages">Packages</a></li>
+      <li><a href="#contact" class="nav-cta">Book a Call</a></li>
+    </ul>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-bg">
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-grid"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Now accepting operator clients
+      </div>
+      <h1>
+        Turn kitchen chaos
+        <em>into command.</em>
+      </h1>
+      <p class="hero-lead">
+        I build custom operational systems for Chick-fil-A leaders — deployment engines, shift planners, scorecard tools, and BOH command centers that work during real rushes.
+      </p>
+      <div class="hero-actions">
+        <a href="#contact" class="btn btn-primary">
+          Start a project
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#work" class="btn btn-ghost">See my work</a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <a href="../BOH House Commander/app-react/dist/index.html" class="hero-dashboard-link" title="Open BOH House Commander">
+      <div class="dashboard-card">
+        <div class="dash-header">
+          <span class="dash-title">BOH Command Center</span>
+          <span class="dash-live">Live shift</span>
+        </div>
+        <div class="dash-metrics">
+          <div class="metric">
+            <div class="metric-label">Rush Ready</div>
+            <div class="metric-value green">94%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Coverage</div>
+            <div class="metric-value gold">11/12</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Risk Flags</div>
+            <div class="metric-value red">2</div>
+          </div>
+        </div>
+        <div class="dash-positions">
+          <div class="pos-row">
+            <span class="pos-name">Breading</span>
+            <div class="pos-bar"><div class="pos-fill" style="width:92%"></div></div>
+            <span class="pos-pct">92%</span>
+          </div>
+          <div class="pos-row">
+            <span class="pos-name">Machines</span>
+            <div class="pos-bar"><div class="pos-fill" style="width:88%"></div></div>
+            <span class="pos-pct">88%</span>
+          </div>
+          <div class="pos-row">
+            <span class="pos-name">Primary</span>
+            <div class="pos-bar"><div class="pos-fill" style="width:100%"></div></div>
+            <span class="pos-pct">100%</span>
+          </div>
+          <div class="pos-row">
+            <span class="pos-name">Fries</span>
+            <div class="pos-bar"><div class="pos-fill" style="width:76%"></div></div>
+            <span class="pos-pct">76%</span>
+          </div>
+        </div>
+      </div>
+      </a>
+      <div class="float-card float-card-1">
+        <strong>Auto-Deploy</strong>
+        6 positions filled in 4 sec
+      </div>
+      <div class="float-card float-card-2">
+        <strong>Break Planner</strong>
+        Next break: 2:15 PM
+      </div>
+    </div>
+  </header>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee">
+      <span>Shift Deployment</span><span>BOH Command Center</span><span>HotSchedules Integration</span><span>SmartShop Tools</span><span>Leadership Pipeline</span><span>Break Planning</span><span>Coverage Heatmaps</span><span>Slack Automation</span><span>SOP Systems</span><span>Event Prep</span>
+      <span>Shift Deployment</span><span>BOH Command Center</span><span>HotSchedules Integration</span><span>SmartShop Tools</span><span>Leadership Pipeline</span><span>Break Planning</span><span>Coverage Heatmaps</span><span>Slack Automation</span><span>SOP Systems</span><span>Event Prep</span>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section class="services" id="services">
+    <div class="services-header reveal">
+      <div>
+        <div class="section-label">What I Build</div>
+        <h2 class="section-title">Systems that survive<br>the lunch rush.</h2>
+      </div>
+      <p class="section-sub">Not templates. Not theory. Custom tools built from real BOH leadership — designed to answer the questions your shift actually asks.</p>
+    </div>
+
+    <div class="bento">
+      <div class="bento-card span-7 reveal">
+        <div class="bento-icon">⚡</div>
+        <h3>BOH Command Center</h3>
+        <p>Mobile-first deployment dashboards with auto-position assignment, skill matrices, coverage heatmaps, and live rush-readiness scoring. The flagship system — built as a React PWA that works offline on your phone during service.</p>
+        <div class="bento-tags">
+          <span class="tag">Auto-Deploy Engine</span>
+          <span class="tag">Skill Matrix</span>
+          <span class="tag">Break Planner</span>
+          <span class="tag">PWA / Offline</span>
+        </div>
+        <a href="../BOH House Commander/app-react/dist/index.html" class="bento-link">Open BOH House Commander →</a>
+      </div>
+      <div class="bento-card span-5 reveal">
+        <div class="bento-icon">📅</div>
+        <h3>Shift &amp; Schedule Systems</h3>
+        <p>Weekly planners with HotSchedules CSV import, availability rules, hourly staffing targets, and Vestavia-style position logic baked in.</p>
+        <div class="bento-tags">
+          <span class="tag">HotSchedules</span>
+          <span class="tag">Staffing Targets</span>
+        </div>
+        <a href="../boh-shift-app/index.html" class="bento-link">Open Shift Setup App →</a>
+      </div>
+      <div class="bento-card span-4 reveal">
+        <div class="bento-icon">📊</div>
+        <h3>Scorecard &amp; Audit Tools</h3>
+        <p>Browser-based SmartShop editors, SAFE audit checklists, and observation trackers — all local-first, no cloud uploads.</p>
+        <a href="../smartshop-scorecard-web/index.html" class="bento-link">Open SmartShop Tool →</a>
+      </div>
+      <div class="bento-card span-4 reveal">
+        <div class="bento-icon">📋</div>
+        <h3>SOP &amp; Training Hubs</h3>
+        <p>Browsable standard operating procedure websites, shift lead guides, and Kitchen IQ training pipelines your team actually opens.</p>
+        <a href="../boh-sop-website/index.html" class="bento-link">Open SOP Website →</a>
+      </div>
+      <div class="bento-card span-4 reveal">
+        <div class="bento-icon">🤖</div>
+        <h3>Ops Automation</h3>
+        <p>Slack-to-newsletter pipelines, morning briefings from Google Calendar + Gmail, and WTD business reports with action-item trackers.</p>
+        <a href="../Documents/Codex/2026-06-28/look-through-my-slack-to-give/outputs/CFA_Vestavia_WTD_Business_Newsletter_2026-06-28.html" class="bento-link">Open WTD Newsletter →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="process" id="process">
+    <div class="reveal">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">From messy notes to<br>a working system.</h2>
+      <p class="section-sub">I start with how your kitchen actually runs — not how a consultant imagines it should.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3>Ops Discovery</h3>
+        <p>We map your positions, pain points, staffing model, and rush patterns. I shadow your reality, not a slide deck.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <h3>System Design</h3>
+        <p>I write a knowledge base spec — deployment rules, break logic, risk flags — and get your sign-off before a single line of code.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <h3>Build &amp; Iterate</h3>
+        <p>Fast prototypes you can test on a real shift. We refine until leaders on your team can run it without you in the room.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <h3>Deploy &amp; Train</h3>
+        <p>Install on phones, import your roster, train shift leads, and hand off documentation. You own everything — no subscriptions required.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <section class="portfolio" id="work">
+    <div class="reveal">
+      <div class="section-label">Proven Work</div>
+      <h2 class="section-title">Built in real kitchens.<br>Battle-tested on rushes.</h2>
+      <p class="section-sub">Every project below was built for actual Chick-fil-A operational needs — not mockups. <strong style="color:var(--paper)">Click any card to open the live system on this computer.</strong></p>
+    </div>
+    <div class="portfolio-grid">
+      <a href="../BOH House Commander/app-react/dist/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview red">🎛️</div>
+        <div class="project-body">
+          <h3>BOH House Commander</h3>
+          <p>Full React PWA with auto-deploy, coverage heatmap, CSV import/export, and 1,200-line ops knowledge base.</p>
+          <div class="project-meta"><span>React</span><span>PWA</span><span>TypeScript</span></div>
+          <span class="project-open">Open React PWA →</span>
+          <div class="project-path">BOH House Commander/app-react/dist/</div>
+        </div>
+      </a>
+      <a href="../BOH House Commander/app/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview red">🖥️</div>
+        <div class="project-body">
+          <h3>BOH House Commander (Legacy)</h3>
+          <p>Original no-build vanilla HTML/JS version — runs without Node, same deployment logic, instant open.</p>
+          <div class="project-meta"><span>Vanilla JS</span><span>No build</span></div>
+          <span class="project-open">Open legacy app →</span>
+          <div class="project-path">BOH House Commander/app/</div>
+        </div>
+      </a>
+      <a href="../boh-shift-app/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">📱</div>
+        <div class="project-body">
+          <h3>BOH Shift Setup App</h3>
+          <p>Hourly staffing targets, Vestavia reference presets, and auto-schedule from position requirements.</p>
+          <div class="project-meta"><span>Vanilla JS</span><span>Mobile</span></div>
+          <span class="project-open">Open app →</span>
+          <div class="project-path">boh-shift-app/</div>
+        </div>
+      </a>
+      <a href="../shift-setup-app/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">🗓️</div>
+        <div class="project-body">
+          <h3>Shift Setup App</h3>
+          <p>Alternate shift planning interface for BOH period setup and staffing block configuration.</p>
+          <div class="project-meta"><span>HTML/JS</span><span>Planning</span></div>
+          <span class="project-open">Open app →</span>
+          <div class="project-path">shift-setup-app/</div>
+        </div>
+      </a>
+      <a href="../smartshop-scorecard-web/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview gold">✅</div>
+        <div class="project-body">
+          <h3>SmartShop Scorecard Web</h3>
+          <p>Local-first Excel scorecard editor with observation tracking — no server, no uploads, works in-browser.</p>
+          <div class="project-meta"><span>XLSX</span><span>Local-first</span></div>
+          <span class="project-open">Open tool →</span>
+          <div class="project-path">smartshop-scorecard-web/</div>
+        </div>
+      </a>
+      <a href="../Documents/Kimi-Projects/boh-planner-web/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview gold">📋</div>
+        <div class="project-body">
+          <h3>BOH Planner Web</h3>
+          <p>Web-based BOH shift planner built with Kimi — schedule blocks, position planning, and setup workflows.</p>
+          <div class="project-meta"><span>Planner</span><span>Web</span></div>
+          <span class="project-open">Open planner →</span>
+          <div class="project-path">Documents/Kimi-Projects/boh-planner-web/</div>
+        </div>
+      </a>
+      <a href="../Documents/Codex/2026-06-28/look-through-my-slack-to-give/outputs/CFA_Vestavia_WTD_Business_Newsletter_2026-06-28.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">📰</div>
+        <div class="project-body">
+          <h3>Slack WTD Newsletter</h3>
+          <p>Week-to-date Vestavia business report — wins, risk tables, action items, and owners pulled from Slack.</p>
+          <div class="project-meta"><span>Python</span><span>Slack API</span></div>
+          <span class="project-open">Open newsletter →</span>
+          <div class="project-path">Codex/.../CFA_Vestavia_WTD_Business_Newsletter_2026-06-28.html</div>
+        </div>
+      </a>
+      <a href="../slack-daily-newsletter.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">📬</div>
+        <div class="project-body">
+          <h3>Slack Daily Newsletter</h3>
+          <p>Daily digest template for surfacing Slack highlights, shift notes, and team updates.</p>
+          <div class="project-meta"><span>HTML</span><span>Daily</span></div>
+          <span class="project-open">Open template →</span>
+          <div class="project-path">slack-daily-newsletter.html</div>
+        </div>
+      </a>
+      <a href="../last-7-days-slack-report-checklist.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">☑️</div>
+        <div class="project-body">
+          <h3>7-Day Slack Report Checklist</h3>
+          <p>Interactive checklist for reviewing the last week of Slack ops reports and follow-up items.</p>
+          <div class="project-meta"><span>Checklist</span><span>Slack</span></div>
+          <span class="project-open">Open checklist →</span>
+          <div class="project-path">last-7-days-slack-report-checklist.html</div>
+        </div>
+      </a>
+      <a href="../Claude Code For Hiring Website/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview red">👥</div>
+        <div class="project-body">
+          <h3>BOH Hiring Website</h3>
+          <p>Custom recruiting landing page with role selector, benefits, and careers portal integration for Vestavia.</p>
+          <div class="project-meta"><span>HTML/CSS</span><span>Recruiting</span></div>
+          <span class="project-open">Open site →</span>
+          <div class="project-path">Claude Code For Hiring Website/</div>
+        </div>
+      </a>
+      <a href="../boh-sop-website/index.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview gold">📖</div>
+        <div class="project-body">
+          <h3>SOP Website</h3>
+          <p>Browsable standard operating procedure hub for BOH teams — procedures organized and easy to find mid-shift.</p>
+          <div class="project-meta"><span>SOP</span><span>Web</span></div>
+          <span class="project-open">Open SOP site →</span>
+          <div class="project-path">boh-sop-website/</div>
+        </div>
+      </a>
+      <a href="../Downloads/CFA_Shift_Lead_Guide.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview gold">🧭</div>
+        <div class="project-body">
+          <h3>Shift Lead Guide</h3>
+          <p>CFA shift lead reference guide — role expectations, checklists, and leadership flow for running a shift.</p>
+          <div class="project-meta"><span>Guide</span><span>Leadership</span></div>
+          <span class="project-open">Open guide →</span>
+          <div class="project-path">Downloads/CFA_Shift_Lead_Guide.html</div>
+        </div>
+      </a>
+      <a href="../OneDrive/Documents/Leadership Pipeline/boh-schedule-jun-28-jul-4-2026.html" class="project-card reveal" target="_blank" rel="noopener">
+        <div class="project-preview blue">📆</div>
+        <div class="project-body">
+          <h3>BOH Schedule (Jun 28 – Jul 4)</h3>
+          <p>Leadership pipeline weekly schedule view — position coverage and staffing plan for the current week.</p>
+          <div class="project-meta"><span>Schedule</span><span>HTML</span></div>
+          <span class="project-open">Open schedule →</span>
+          <div class="project-path">OneDrive/Documents/Leadership Pipeline/</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="about-visual reveal">
+      <div class="about-frame">
+        <div class="about-stat-grid">
+          <div class="about-stat">
+            <div class="num">8+</div>
+            <div class="lbl">Systems Built</div>
+          </div>
+          <div class="about-stat">
+            <div class="num">1.2k</div>
+            <div class="lbl">Lines of Ops Logic</div>
+          </div>
+          <div class="about-stat">
+            <div class="num">445</div>
+            <div class="lbl">CFA Portal Sessions</div>
+          </div>
+          <div class="about-stat">
+            <div class="num">100%</div>
+            <div class="lbl">Rush-Tested</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="about-content reveal">
+      <div class="section-label">Who's Behind This</div>
+      <h2 class="section-title">Joshua "Josh" Vinziant</h2>
+      <p class="section-sub">BOH Kitchen Leadership at Chick-fil-A Vestavia Hills. I don't consult from the sidelines — I run shifts, own food safety action items, and build the tools I wish existed when the lunch rush hits.</p>
+      <ul class="about-list">
+        <li>Kitchen leadership, shift setup, staffing strategy, and event planning</li>
+        <li>Turns "hero leader carries the shift" into structured command systems</li>
+        <li>AI-native builder — ships React PWAs, Python automations, and Excel pipelines</li>
+        <li>Practical, visual, high-accountability — systems you open during service</li>
+      </ul>
+      <a href="#contact" class="btn btn-primary" style="margin-top:28px">Work with Josh</a>
+    </div>
+  </section>
+
+  <!-- PACKAGES -->
+  <section class="packages" id="packages">
+    <div class="reveal" style="text-align:center; max-width:600px; margin:0 auto">
+      <div class="section-label">Engagement Options</div>
+      <h2 class="section-title">Pick your starting point.</h2>
+      <p class="section-sub" style="margin:0 auto">Every engagement is scoped to your store's reality. Custom quotes after discovery call.</p>
+    </div>
+    <div class="package-grid">
+      <div class="package reveal">
+        <div class="package-tier">Starter</div>
+        <h3>Ops Audit</h3>
+        <p class="package-desc">A focused review of your shift flow, staffing gaps, and quick-win system opportunities.</p>
+        <ul>
+          <li>2-hour ops discovery session</li>
+          <li>Shift flow &amp; position map</li>
+          <li>Priority pain-point report</li>
+          <li>Quick-win recommendations</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost">Get a quote</a>
+      </div>
+      <div class="package featured reveal">
+        <div class="package-tier">Core</div>
+        <h3>Custom System</h3>
+        <p class="package-desc">A purpose-built tool — command center, shift planner, or scorecard — designed for your team.</p>
+        <ul>
+          <li>Full ops discovery + spec</li>
+          <li>Custom web app or PWA</li>
+          <li>HotSchedules / CSV integration</li>
+          <li>2 rounds of shift testing</li>
+          <li>Leader training session</li>
+          <li>You own the code</li>
+        </ul>
+        <a href="#contact" class="btn btn-primary">Get a quote</a>
+      </div>
+      <div class="package reveal">
+        <div class="package-tier">Enterprise</div>
+        <h3>Full Command Stack</h3>
+        <p class="package-desc">End-to-end operational platform — deployment, scheduling, checklists, automation, and reporting.</p>
+        <ul>
+          <li>Multi-module command center</li>
+          <li>Slack + Google automation</li>
+          <li>Leadership pipeline tools</li>
+          <li>Ongoing iteration support</li>
+          <li>Multi-location scaling</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost">Get a quote</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="contact">
+    <div class="cta-inner reveal">
+      <h2>Ready to systemize your kitchen?</h2>
+      <p>Tell me about your store, your team size, and what's breaking during rush. I'll reply within 24 hours with next steps.</p>
+      <a href="mailto:vinziant@gmail.com?subject=Vinziant%20Systems%20%E2%80%94%20Project%20Inquiry&body=Hi%20Josh%2C%0A%0AI%27m%20interested%20in%20working%20with%20Vinziant%20Systems.%0A%0AStore%20location%3A%20%0ATeam%20size%3A%20%0ABiggest%20ops%20challenge%3A%20%0A%0AThanks!" class="btn btn-primary">
+        vinziant@gmail.com
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="cta-email">Or email directly: <a href="mailto:vinziant@gmail.com">vinziant@gmail.com</a></p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo">
+          <div class="logo-mark">VS</div>
+          <div class="logo-text">Vinziant Systems<span>Chick-fil-A Operations</span></div>
+        </a>
+        <p>Custom operational systems for Chick-fil-A restaurant leaders. Built by an operator, for operators.</p>
+        <p class="disclaimer">Vinziant Systems is an independent consultancy and is not affiliated with, endorsed by, or sponsored by Chick-fil-A, Inc. or its franchisees. Chick-fil-A® is a registered trademark of CFA Properties, Inc.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <a href="#services">Services</a>
+        <a href="#process">Process</a>
+        <a href="#work">Portfolio</a>
+        <a href="#packages">Packages</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="mailto:vinziant@gmail.com">vinziant@gmail.com</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Vestavia Hills, AL</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Vinziant Systems. All rights reserved.</span>
+      <span>Built with the same tools I ship to clients.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll progress
+    const progress = document.getElementById('progress');
+    window.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+      progress.style.width = pct + '%';
+      document.getElementById('nav').classList.toggle('scrolled', h.scrollTop > 40);
+    });
+
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const navLinks = document.getElementById('navLinks');
+    menuBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      menuBtn.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      menuBtn.classList.remove('open');
+    }));
+
+    // Reveal on scroll
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Animate dashboard bars on load
+    document.querySelectorAll('.pos-fill').forEach((bar, i) => {
+      const w = bar.style.width;
+      bar.style.width = '0';
+      setTimeout(() => { bar.style.width = w; bar.style.transition = 'width 1.2s ease'; }, 600 + i * 150);
+    });
+  </script>
+</body>
+</html>

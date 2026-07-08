@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productivity Calculator | Vinziant Systems</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050608;
+      --surface: rgba(14, 18, 26, 0.72);
+      --surface-solid: #0e121a;
+      --surface-2: rgba(22, 28, 40, 0.85);
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --glow: rgba(56, 189, 248, 0.35);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --cyan: #38bdf8;
+      --cyan-soft: rgba(56, 189, 248, 0.14);
+      --violet: #a78bfa;
+      --violet-soft: rgba(167, 139, 250, 0.12);
+      --green: #4ade80;
+      --green-soft: rgba(74, 222, 128, 0.12);
+      --amber: #fbbf24;
+      --amber-soft: rgba(251, 191, 36, 0.12);
+      --red: #fb7185;
+      --red-soft: rgba(251, 113, 133, 0.12);
+      --foh: #38bdf8;
+      --boh: #fb923c;
+      --leader: #a78bfa;
+      --cfa: #E31837;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --mono: "JetBrains Mono", monospace;
+      --sans: "Plus Jakarta Sans", system-ui, sans-serif;
+      --serif: "Instrument Serif", Georgia, serif;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated ambient background */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      animation: drift 18s var(--ease) infinite alternate;
+    }
+
+    .orb-1 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(56,189,248,0.35), transparent 70%);
+      top: -180px; left: -120px;
+    }
+
+    .orb-2 {
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, rgba(227,24,55,0.22), transparent 70%);
+      top: 20%; right: -160px;
+      animation-delay: -6s;
+    }
+
+    .orb-3 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(167,139,250,0.18), transparent 70%);
+      bottom: -120px; left: 30%;
+      animation-delay: -12s;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, -30px) scale(1.08); }
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black, transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Layout */
+    .shell {
+      position: relative;
+      z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px clamp(16px, 3vw, 32px) 80px;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 14px 18px;
+      margin-bottom: 36px;
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      animation: fadeUp 0.7s var(--ease) both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .brand-mark {
+      width: 38px; height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--cfa), #9b0f28);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(227,24,55,0.3);
+    }
+
+    .brand-text { font-weight: 700; font-size: 14px; }
+    .brand-text span { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+
+    .nav-pill {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      text-decoration: none;
+      transition: all 0.25s var(--ease);
+    }
+
+    .nav-pill:hover {
+      color: var(--cyan);
+      border-color: rgba(56,189,248,0.3);
+      background: var(--cyan-soft);
+      transform: translateY(-1px);
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s var(--ease) 0.08s both;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--cyan-soft);
+      border: 1px solid rgba(56,189,248,0.2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 16px;
+    }
+
+    .hero-badge .pulse {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 0 0 rgba(56,189,248,0.5);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
+      70% { box-shadow: 0 0 0 10px rgba(56,189,248,0); }
+      100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 52px);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 560px;
+    }
+
+    /* Step indicator */
+    .steps-nav {
+      display: flex;
+      gap: 8px;
+      margin: 28px 0 24px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.7s var(--ease) 0.16s both;
+    }
+
+    .step-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s var(--ease);
+    }
+
+    .step-link:hover, .step-link.active {
+      color: var(--text);
+      border-color: rgba(56,189,248,0.25);
+      background: var(--cyan-soft);
+      transform: translateY(-2px);
+    }
+
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .step-link.active .step-num {
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: #0b1020;
+    }
+
+    /* Main grid */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .live-panel { position: relative !important; top: 0 !important; order: -1; }
+    }
+
+    .main-col { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Glass cards */
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: clamp(20px, 3vw, 28px);
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s var(--ease);
+      animation: fadeUp 0.8s var(--ease) both;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.18s; }
+    .card:nth-child(3) { animation-delay: 0.26s; }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      max-width: 480px;
+    }
+
+    .card-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: var(--cyan-soft);
+      white-space: nowrap;
+    }
+
+    /* Inputs — modern floating style */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      position: relative;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      transition: all 0.25s var(--ease);
+    }
+
+    .field:focus-within {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 0 0 4px var(--cyan-soft);
+      transform: translateY(-2px);
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      outline: none;
+    }
+
+    .field .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      opacity: 0.85;
+    }
+
+    /* Formula strip */
+    .formula-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.06), rgba(167,139,250,0.06));
+      border: 1px solid rgba(56,189,248,0.12);
+      border-radius: var(--radius-sm);
+    }
+
+    .formula-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      animation: chipIn 0.5s var(--ease) both;
+    }
+
+    .formula-chip strong { color: var(--text); }
+    .formula-chip.highlight {
+      border-color: rgba(56,189,248,0.3);
+      color: var(--cyan);
+      background: var(--cyan-soft);
+    }
+
+    .formula-chip .arrow { opacity: 0.4; }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Live sticky panel */
+    .live-panel {
+      position: sticky;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeUp 0.8s var(--ease) 0.2s both;
+    }
+
+    .live-card {
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .live-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(56,189,248,0.05), transparent 50%, rgba(167,139,250,0.05));
+      pointer-events: none;
+    }
+
+    .live-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-label .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    /* Ring gauge */
+    .gauge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+
+    .gauge {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      flex-shrink: 0;
+    }
+
+    .gauge svg { transform: rotate(-90deg); }
+
+    .gauge-track {
+      fill: none;
+      stroke: rgba(255,255,255,0.06);
+      stroke-width: 8;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke: url(#gaugeGrad);
+      transition: stroke-dashoffset 0.8s var(--ease);
+    }
+
+    .gauge-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-pct {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .gauge-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .gauge-info h3 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-family: var(--mono);
+      transition: color 0.4s;
+    }
+
+    .gauge-info p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .live-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .live-stat {
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: transform 0.3s var(--ease);
+    }
+
+    .live-stat:hover { transform: scale(1.03); }
+
+    .live-stat .lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .live-stat .val {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 4px;
+      transition: color 0.3s;
+    }
+
+    .live-stat.flash .val { animation: flash 0.5s var(--ease); }
+
+    @keyframes flash {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); color: var(--cyan); }
+    }
+
+    /* Day picker — visual bars */
+    .day-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .day-btn {
+      position: relative;
+      padding: 12px 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s var(--ease);
+      font-family: var(--sans);
+      color: var(--muted);
+      overflow: hidden;
+    }
+
+    .day-btn:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-3px);
+      color: var(--text);
+    }
+
+    .day-btn.active {
+      border-color: rgba(56,189,248,0.4);
+      background: var(--cyan-soft);
+      color: var(--cyan);
+      box-shadow: 0 8px 24px rgba(56,189,248,0.15);
+    }
+
+    .day-btn.over:not(.active) {
+      border-color: rgba(251,113,133,0.35);
+    }
+
+    .day-btn .name {
+      font-size: 12px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .day-btn .hrs {
+      font-family: var(--mono);
+      font-size: 11px;
+      margin-top: 2px;
+      opacity: 0.8;
+    }
+
+    .day-btn .splh {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .day-btn .bar-wrap {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .day-btn .bar {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      transition: width 0.6s var(--ease);
+    }
+
+    .day-btn.over .bar { background: linear-gradient(90deg, var(--red), var(--amber)); }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: all 0.25s var(--ease);
+    }
+
+    .btn:hover {
+      border-color: rgba(56,189,248,0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(167,139,250,0.15));
+      border-color: rgba(56,189,248,0.3);
+      color: var(--cyan);
+    }
+
+    .btn-icon { font-size: 15px; }
+
+    /* Day part cards */
+    .dayparts {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .daypart-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 18px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: all 0.35s var(--ease);
+      animation: slideIn 0.45s var(--ease) both;
+    }
+
+    .daypart-card:hover {
+      border-color: var(--border-hover);
+      transform: translateX(4px);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .daypart-card:nth-child(1) { animation-delay: 0.05s; }
+    .daypart-card:nth-child(2) { animation-delay: 0.1s; }
+    .daypart-card:nth-child(3) { animation-delay: 0.15s; }
+    .daypart-card:nth-child(4) { animation-delay: 0.2s; }
+    .daypart-card:nth-child(5) { animation-delay: 0.25s; }
+
+    .dp-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .dp-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      background: var(--violet-soft);
+      border: 1px solid rgba(167,139,250,0.15);
+    }
+
+    .dp-name {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .dp-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .dp-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .counter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .counter-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .counter.foh .counter-label { color: var(--foh); }
+    .counter.boh .counter-label { color: var(--boh); }
+    .counter.leader .counter-label { color: var(--leader); }
+
+    .counter-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+    }
+
+    .counter-btn {
+      width: 30px; height: 30px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: grid;
+      place-items: center;
+    }
+
+    .counter-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+
+    .counter-val {
+      width: 36px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    .counter-val::-webkit-outer-spin-button,
+    .counter-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .hours-input-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hours-input-wrap label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .hours-input {
+      width: 64px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .hours-input:focus {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 0 0 3px var(--cyan-soft);
+    }
+
+    .sales-input-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sales-input-wrap label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .sales-input {
+      width: 88px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 6px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .sales-input::placeholder { color: var(--muted); opacity: 0.55; font-size: 11px; }
+
+    .sales-input:focus {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 0 0 3px var(--cyan-soft);
+    }
+
+    .dp-results {
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+    }
+
+    .dp-result {
+      min-width: 68px;
+      text-align: right;
+    }
+
+    .dp-result .lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .dp-result .val {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cyan);
+      transition: all 0.3s var(--ease);
+    }
+
+    .dp-result.splh .val { font-size: 16px; }
+
+    .dp-result.headcount .val {
+      font-size: 20px;
+      color: var(--violet);
+    }
+
+    .headcount-formula {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .dp-result.bump .val { animation: bump 0.35s var(--ease); }
+
+    @keyframes bump {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    /* Day summary strip */
+    .day-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .day-summary { grid-template-columns: 1fr 1fr; }
+      .daypart-card { grid-template-columns: 1fr; }
+      .dp-controls { justify-content: flex-start; }
+      .dp-results { flex-wrap: wrap; }
+    }
+
+    /* Productivity tables */
+    .prod-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .prod-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .prod-section-title span {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .prod-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .prod-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 520px;
+    }
+
+    .prod-table th {
+      background: var(--surface-2);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .prod-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .prod-table tr:last-child td { border-bottom: none; }
+    .prod-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .prod-table .name-cell {
+      font-family: var(--sans);
+      font-weight: 600;
+    }
+
+    .splh-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .splh-badge.good { background: var(--green-soft); color: var(--green); }
+    .splh-badge.warn { background: var(--amber-soft); color: var(--amber); }
+    .splh-badge.bad  { background: var(--red-soft); color: var(--red); }
+    .splh-badge.na   { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+    .sales-mix-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    /* Sales mix editor */
+    .mix-panel {
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mix-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .mix-panel-head h3 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .mix-panel-head p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      max-width: 480px;
+    }
+
+    .mix-total {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mix-total.ok { border-color: rgba(74,222,128,0.3); color: var(--green); background: var(--green-soft); }
+    .mix-total.warn { border-color: rgba(251,191,36,0.3); color: var(--amber); background: var(--amber-soft); }
+
+    .mix-rows { display: flex; flex-direction: column; gap: 10px; }
+
+    .mix-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 72px 100px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.2s, transform 0.2s var(--ease);
+    }
+
+    .mix-row:hover { border-color: var(--border-hover); }
+
+    .mix-row-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .mix-row-label .ico { font-size: 18px; }
+
+    .mix-bar-wrap {
+      height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .mix-bar {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      transition: width 0.5s var(--ease);
+      min-width: 2px;
+    }
+
+    .mix-pct-input {
+      width: 100%;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 6px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .mix-pct-input:focus {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 0 0 3px var(--cyan-soft);
+    }
+
+    .mix-dollar {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .mix-dollar strong { color: var(--text); display: block; font-size: 14px; }
+
+    .daily-sales-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .daily-sales-field {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: all 0.2s;
+    }
+
+    .daily-sales-field:focus-within {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 0 0 3px var(--cyan-soft);
+    }
+
+    .daily-sales-field label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .daily-sales-field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+    }
+
+    .daily-sales-field input::placeholder { color: var(--muted); opacity: 0.5; }
+
+    .daily-sales-field.custom { border-color: rgba(56,189,248,0.25); background: var(--cyan-soft); }
+
+    @media (max-width: 700px) {
+      .mix-row {
+        grid-template-columns: 1fr 64px;
+        grid-template-rows: auto auto;
+      }
+      .mix-row-label { grid-column: 1; }
+      .mix-pct-input { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+      .mix-bar-wrap { grid-column: 1; }
+      .mix-dollar { grid-column: 1 / -1; text-align: left; }
+    }
+
+    .chart-splh {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .chart-target-line {
+      position: absolute;
+      left: 0; right: 0;
+      border-top: 1px dashed rgba(74,222,128,0.35);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .sum-pill {
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      text-align: center;
+      transition: transform 0.3s var(--ease);
+    }
+
+    .sum-pill:hover { transform: translateY(-2px); }
+
+    .sum-pill .lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .sum-pill .val {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* Weekly chart */
+    .week-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+      margin-top: 8px;
+      padding: 0 4px;
+    }
+
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .chart-bar-wrap {
+      width: 100%;
+      height: 90px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+    }
+
+    .chart-budget-line {
+      position: absolute;
+      left: 0; right: 0;
+      border-top: 1px dashed rgba(255,255,255,0.15);
+      pointer-events: none;
+    }
+
+    .chart-bar {
+      width: 70%;
+      max-width: 36px;
+      border-radius: 6px 6px 2px 2px;
+      background: linear-gradient(180deg, var(--cyan), rgba(56,189,248,0.3));
+      transition: height 0.7s var(--ease);
+      position: relative;
+      min-height: 4px;
+    }
+
+    .chart-bar.over {
+      background: linear-gradient(180deg, var(--red), rgba(251,113,133,0.3));
+    }
+
+    .chart-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* Breakdown */
+    .breakdown {
+      list-style: none;
+    }
+
+    .breakdown li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      gap: 12px;
+      transition: background 0.2s;
+    }
+
+    .breakdown li:hover { background: rgba(255,255,255,0.02); padding-left: 8px; padding-right: 8px; margin: 0 -8px; border-radius: 8px; }
+
+    .breakdown .key { color: var(--muted); }
+    .breakdown .val { font-family: var(--mono); font-weight: 600; }
+
+    .breakdown .total {
+      border-top: 2px solid rgba(56,189,248,0.2);
+      border-bottom: none;
+      margin-top: 4px;
+      padding-top: 16px;
+      font-weight: 700;
+    }
+
+    .breakdown .total .val { color: var(--cyan); font-size: 15px; }
+
+    /* Insight banner */
+    .insight {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      line-height: 1.6;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      transition: all 0.4s var(--ease);
+      animation: fadeUp 0.5s var(--ease);
+    }
+
+    .insight.good { border-color: rgba(74,222,128,0.25); background: var(--green-soft); }
+    .insight.warn { border-color: rgba(251,191,36,0.25); background: var(--amber-soft); }
+    .insight.bad  { border-color: rgba(251,113,133,0.25); background: var(--red-soft); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 12px 22px;
+      background: var(--surface-solid);
+      border: 1px solid rgba(56,189,248,0.3);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--cyan);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.4s var(--ease);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      font-size: 12px;
+      color: var(--muted);
+      animation: fadeUp 0.8s var(--ease) 0.4s both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="grid-bg"></div>
+
+  <div class="shell">
+    <nav>
+      <a href="index.html" class="brand">
+        <div class="brand-mark">VS</div>
+        <div class="brand-text">Vinziant Systems<span>Productivity Calculator</span></div>
+      </a>
+      <a href="index.html" class="nav-pill">← Back to site</a>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-badge"><span class="pulse"></span> Live calculations · updates as you type</div>
+      <h1>Plan labor with <em>precision.</em></h1>
+      <p class="hero-sub">Set your weekly sales target, build your day-part staffing, and instantly see productivity, budget usage, and daily hour limits.</p>
+    </header>
+
+    <div class="steps-nav">
+      <a href="#step1" class="step-link active"><span class="step-num">1</span> Sales &amp; Target</a>
+      <a href="#step2" class="step-link"><span class="step-num">2</span> Day-Part Staffing</a>
+      <a href="#step3" class="step-link"><span class="step-num">3</span> Results</a>
+    </div>
+
+    <div class="layout">
+      <div class="main-col">
+
+        <!-- STEP 1 -->
+        <section class="card" id="step1">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Sales &amp; Labor Target</div>
+              <p class="card-desc">Your labor hours limit = sales ÷ target SPLH + training buffer.</p>
+            </div>
+            <span class="card-tag">Step 1</span>
+          </div>
+
+          <div class="input-grid">
+            <div class="field">
+              <label for="weekSales">Weekly Sales</label>
+              <input type="number" id="weekSales" value="125000" min="0" step="1000" />
+              <div class="hint">Total projected week revenue</div>
+            </div>
+            <div class="field">
+              <label for="targetSplh">Target SPLH</label>
+              <input type="number" id="targetSplh" value="110" min="1" step="1" />
+              <div class="hint">$ sales per labor hour</div>
+            </div>
+            <div class="field">
+              <label for="trainingHours">Training Buffer</label>
+              <input type="number" id="trainingHours" value="100" min="0" step="5" />
+              <div class="hint">Hours added to limit</div>
+            </div>
+            <div class="field">
+              <label for="operatingDays">Operating Days</label>
+              <input type="number" id="operatingDays" value="7" min="1" max="7" step="1" />
+            </div>
+            <div class="field">
+              <label for="avgWage">Avg Wage (optional)</label>
+              <input type="number" id="avgWage" value="16" min="0" step="0.5" />
+              <div class="hint">For labor % estimate</div>
+            </div>
+          </div>
+
+          <div class="formula-strip" id="formulaStrip"></div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section class="card" id="step2">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Day-Part Staffing</div>
+              <p class="card-desc">Enter <strong style="color:var(--text)">sales $</strong> and staff each day part with FOH / BOH / Leader sliders. Labor hrs = (FOH + BOH + Leaders) × hours.</p>
+            </div>
+            <span class="card-tag">Step 2</span>
+          </div>
+
+          <div class="toolbar">
+            <button class="btn btn-primary" id="copyMondayBtn"><span class="btn-icon">📋</span> Copy Monday → All Days</button>
+            <button class="btn" id="copyMondaySalesBtn"><span class="btn-icon">💰</span> Copy Monday Sales → All</button>
+            <button class="btn" id="clearDayBtn"><span class="btn-icon">↺</span> Reset Day</button>
+          </div>
+
+          <div class="day-picker" id="dayPicker"></div>
+          <div class="dayparts" id="dayparts"></div>
+          <div class="day-summary" id="daySummary"></div>
+
+          <div class="prod-section" id="daypartProdSection">
+            <div class="prod-section-title">
+              Day-Part Productivity
+              <span id="daypartProdLabel">—</span>
+            </div>
+            <div class="prod-table-wrap">
+              <table class="prod-table">
+                <thead>
+                  <tr>
+                    <th>Day Part</th>
+                    <th>Sales</th>
+                    <th>FOH</th>
+                    <th>BOH</th>
+                    <th>Ldr</th>
+                    <th>Total HC</th>
+                    <th>Labor Hrs</th>
+                    <th>SPLH</th>
+                    <th>vs Target</th>
+                  </tr>
+                </thead>
+                <tbody id="daypartProdBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section class="card" id="step3">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Weekly Breakdown</div>
+              <p class="card-desc">Full math trail from sales to true productivity.</p>
+            </div>
+            <span class="card-tag">Step 3</span>
+          </div>
+
+          <div class="prod-section" style="margin-top:0;padding-top:0;border-top:none">
+            <div class="prod-section-title">Daily Productivity <span>planned hours per day</span></div>
+            <div class="prod-table-wrap">
+              <table class="prod-table">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Day Sales</th>
+                    <th>Labor Hrs</th>
+                    <th>Daily SPLH</th>
+                    <th>vs Target</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyProdBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <ul class="breakdown" id="weeklyBreakdown" style="margin-top:20px"></ul>
+          <div class="insight" id="insightNote"></div>
+        </section>
+      </div>
+
+      <!-- LIVE PANEL -->
+      <aside class="live-panel">
+        <div class="live-card">
+          <div class="live-label"><span class="dot"></span> Live Dashboard</div>
+
+          <div class="gauge-wrap">
+            <div class="gauge">
+              <svg width="110" height="110" viewBox="0 0 110 110">
+                <defs>
+                  <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#38bdf8"/>
+                    <stop offset="100%" stop-color="#a78bfa"/>
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-track" cx="55" cy="55" r="46"/>
+                <circle class="gauge-fill" id="gaugeFill" cx="55" cy="55" r="46"
+                  stroke-dasharray="289.03" stroke-dashoffset="289.03"/>
+              </svg>
+              <div class="gauge-center">
+                <div class="gauge-pct" id="gaugePct">0%</div>
+                <div class="gauge-sub">budget</div>
+              </div>
+            </div>
+            <div class="gauge-info">
+              <h3 id="liveProductivity">—</h3>
+              <p>True productivity ($/hr)</p>
+            </div>
+          </div>
+
+          <div class="live-stats">
+            <div class="live-stat" id="lsLimit">
+              <div class="lbl">Hours Limit</div>
+              <div class="val" data-animate id="liveLimit">—</div>
+            </div>
+            <div class="live-stat" id="lsDaily">
+              <div class="lbl">Daily Budget</div>
+              <div class="val" data-animate id="liveDaily">—</div>
+            </div>
+            <div class="live-stat" id="lsPlanned">
+              <div class="lbl">Planned</div>
+              <div class="val" data-animate id="livePlanned">—</div>
+            </div>
+            <div class="live-stat" id="lsRemaining">
+              <div class="lbl">Remaining</div>
+              <div class="val" data-animate id="liveRemaining">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="live-card">
+          <div class="live-label">Daily Hours</div>
+          <div class="week-chart" id="weekChart"></div>
+        </div>
+
+        <div class="live-card">
+          <div class="live-label">Daily Productivity</div>
+          <div style="font-size:10px;color:var(--muted);margin:-8px 0 10px">Green line = target SPLH</div>
+          <div class="week-chart" id="splhChart"></div>
+          <div class="live-stat" style="margin-top:12px" id="lsDaySplh">
+            <div class="lbl">Selected Day SPLH</div>
+            <div class="val" id="liveDaySplh">—</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>© 2026 Vinziant Systems — Independent CFA operations tooling</footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const DAYS_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const DAYPARTS = [
+      { id: 'breakfast', name: 'Breakfast',      time: '6:00 AM – 10:30 AM', icon: '🌅' },
+      { id: 'lunch',     name: 'Lunch',          time: '10:30 AM – 2:00 PM', icon: '🔥' },
+      { id: 'pm',        name: 'Afternoon',      time: '2:00 PM – 5:00 PM', icon: '☀️' },
+      { id: 'dinner',    name: 'Dinner / Close', time: '5:00 PM – Close', icon: '🌆' },
+    ];
+
+    const CIRC = 2 * Math.PI * 46;
+    let activeDay = 0;
+    const staffData = {};
+    const partSalesData = {};
+    const animState = {};
+
+    DAYS_FULL.forEach((_, di) => {
+      staffData[di] = {};
+      partSalesData[di] = {};
+      DAYPARTS.forEach(dp => {
+        staffData[di][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id, di) };
+        partSalesData[di][dp.id] = 0;
+      });
+    });
+
+    function defaultHours(partId) {
+      const defaults = { breakfast: 4.5, lunch: 3.5, pm: 3, dinner: 6 };
+      return defaults[partId] || 0;
+    }
+
+    function seedMonday() {
+      const staff = {
+        breakfast: { foh: 4, boh: 5, leader: 1, hours: 4.5 },
+        lunch:     { foh: 8, boh: 7, leader: 2, hours: 3.5 },
+        pm:        { foh: 5, boh: 5, leader: 1, hours: 3 },
+        dinner:    { foh: 9, boh: 10, leader: 2, hours: 6 },
+      };
+      const sales = { breakfast: 5000, lunch: 14000, pm: 4500, dinner: 9000 };
+      DAYPARTS.forEach(dp => {
+        Object.assign(staffData[0][dp.id], staff[dp.id]);
+        partSalesData[0][dp.id] = sales[dp.id];
+      });
+    }
+    seedMonday();
+
+    const $ = id => document.getElementById(id);
+    const fmt = (n, d = 1) => isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
+    const fmtMoney = n => isFinite(n) ? '$' + Math.round(n).toLocaleString('en-US') : '—';
+    const fmtPct = n => isFinite(n) ? fmt(n, 1) + '%' : '—';
+
+    function getInputs() {
+      return {
+        weekSales: parseFloat($('weekSales').value) || 0,
+        targetSplh: parseFloat($('targetSplh').value) || 1,
+        trainingHours: parseFloat($('trainingHours').value) || 0,
+        operatingDays: Math.min(7, Math.max(1, parseInt($('operatingDays').value) || 7)),
+        avgWage: parseFloat($('avgWage').value) || 0,
+      };
+    }
+
+    function calcBudget(inp) {
+      const baseHours = inp.weekSales / inp.targetSplh;
+      const limit = baseHours + inp.trainingHours;
+      const dailyBudget = limit / inp.operatingDays;
+      return { baseHours, limit, dailyBudget };
+    }
+
+    function partHeadcount(d) {
+      return (d.foh || 0) + (d.boh || 0) + (d.leader || 0);
+    }
+
+    function partHours(di, pid) {
+      const d = staffData[di][pid];
+      return partHeadcount(d) * (d.hours || 0);
+    }
+
+    function dayHours(di) {
+      return DAYPARTS.reduce((s, dp) => s + partHours(di, dp.id), 0);
+    }
+
+    function weekHours() {
+      const inp = getInputs();
+      let t = 0;
+      for (let i = 0; i < inp.operatingDays; i++) t += dayHours(i);
+      return t;
+    }
+
+    function partSales(di, partId) {
+      return parseFloat(partSalesData[di]?.[partId]) || 0;
+    }
+
+    function dailySalesTotal(di) {
+      return DAYPARTS.reduce((s, dp) => s + partSales(di, dp.id), 0);
+    }
+
+    function weekSalesEntered(inp) {
+      let t = 0;
+      for (let i = 0; i < inp.operatingDays; i++) t += dailySalesTotal(i);
+      return t;
+    }
+
+    function dailyProductivity(inp, di) {
+      const hrs = dayHours(di);
+      if (hrs <= 0) return 0;
+      return dailySalesTotal(di) / hrs;
+    }
+
+    function partProductivity(inp, di, partId) {
+      const hrs = partHours(di, partId);
+      return hrs > 0 ? partSales(di, partId) / hrs : 0;
+    }
+
+    function splhStatus(splh, target) {
+      if (!isFinite(splh) || splh <= 0) return 'na';
+      if (splh >= target) return 'good';
+      if (splh >= target * 0.9) return 'warn';
+      return 'bad';
+    }
+
+    function splhColor(status) {
+      return { good: 'var(--green)', warn: 'var(--amber)', bad: 'var(--red)', na: 'var(--muted)' }[status] || 'var(--muted)';
+    }
+
+    function splhBadge(splh, target) {
+      const st = splhStatus(splh, target);
+      if (st === 'na') return '<span class="splh-badge na">—</span>';
+      const diff = splh - target;
+      const label = diff >= 0 ? `+${fmt(diff, 0)}` : fmt(diff, 0);
+      return `<span class="splh-badge ${st}">${label}</span>`;
+    }
+
+    function vsTargetText(splh, target) {
+      const st = splhStatus(splh, target);
+      if (st === 'na') return 'No hours';
+      if (st === 'good') return 'On target';
+      if (st === 'warn') return 'Close';
+      return 'Below target';
+    }
+
+    /* Animated number tween */
+    function animateVal(el, newVal, formatter) {
+      const key = el.id;
+      const target = parseFloat(String(newVal).replace(/[^0-9.-]/g, '')) || 0;
+      const start = animState[key] ?? target;
+      animState[key] = target;
+      const duration = 400;
+      const t0 = performance.now();
+
+      function tick(now) {
+        const p = Math.min((now - t0) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const cur = start + (target - start) * ease;
+        el.textContent = formatter(cur);
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      el.closest('.live-stat')?.classList.add('flash');
+      setTimeout(() => el.closest('.live-stat')?.classList.remove('flash'), 500);
+    }
+
+    function showToast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    function renderFormula() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      $('formulaStrip').innerHTML = `
+        <div class="formula-chip"><span>${fmtMoney(inp.weekSales)}</span><span class="arrow">÷</span><span>${fmtMoney(inp.targetSplh)}/hr</span><span class="arrow">=</span><strong>${fmt(b.baseHours,0)} hrs</strong></div>
+        <div class="formula-chip"><span>+ Training</span><strong>${fmt(inp.trainingHours,0)} hrs</strong></div>
+        <div class="formula-chip highlight"><span>Weekly Limit</span><strong>${fmt(b.limit,1)} hrs</strong></div>
+        <div class="formula-chip highlight"><span>Daily Budget</span><strong>${fmt(b.dailyBudget,1)} hrs</strong></div>
+      `;
+    }
+
+    function renderDayPicker() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const maxH = Math.max(b.dailyBudget, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
+      const picker = $('dayPicker');
+      picker.innerHTML = '';
+
+      for (let i = 0; i < inp.operatingDays; i++) {
+        const hrs = dayHours(i);
+        const splh = dailyProductivity(inp, i);
+        const splhSt = splhStatus(splh, inp.targetSplh);
+        const pct = Math.min((hrs / maxH) * 100, 100);
+        const over = hrs > b.dailyBudget + 0.05;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'day-btn' + (i === activeDay ? ' active' : '') + (over ? ' over' : '');
+        btn.innerHTML = `
+          <span class="name">${DAYS[i]}</span>
+          <span class="hrs">${fmt(hrs,0)}h</span>
+          <span class="splh" style="color:${splhColor(splhSt)}">${hrs > 0 ? fmtMoney(splh) + '/hr' : '—'}</span>
+          <div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+        `;
+        btn.addEventListener('click', () => {
+          activeDay = i;
+          renderDayPicker();
+          renderDayparts();
+        });
+        picker.appendChild(btn);
+      }
+    }
+
+    function renderDayparts() {
+      const wrap = $('dayparts');
+      wrap.innerHTML = '';
+
+      const inp = getInputs();
+
+      DAYPARTS.forEach(dp => {
+        const d = staffData[activeDay][dp.id];
+        const fohHc = d.foh || 0;
+        const bohHc = d.boh || 0;
+        const leaderHc = d.leader || 0;
+        const totalHc = partHeadcount(d);
+        const labor = totalHc * (d.hours||0);
+        const salesVal = partSales(activeDay, dp.id);
+        const splh = partProductivity(inp, activeDay, dp.id);
+        const splhSt = splhStatus(splh, inp.targetSplh);
+
+        const card = document.createElement('div');
+        card.className = 'daypart-card';
+        card.innerHTML = `
+          <div class="dp-info">
+            <div class="dp-icon">${dp.icon}</div>
+            <div>
+              <div class="dp-name">${dp.name}</div>
+              <div class="dp-time">${dp.time}</div>
+            </div>
+          </div>
+          <div class="dp-controls">
+            <div class="sales-input-wrap">
+              <label>Sales $</label>
+              <input class="sales-input" type="number" min="0" step="100" data-field="sales" data-part="${dp.id}" value="${salesVal || ''}" placeholder="0" />
+            </div>
+            <div class="counter foh">
+              <span class="counter-label">FOH</span>
+              <div class="counter-row">
+                <button type="button" class="counter-btn" data-a="-1" data-field="foh" data-part="${dp.id}">−</button>
+                <input class="counter-val" type="number" min="0" data-field="foh" data-part="${dp.id}" value="${d.foh}" />
+                <button type="button" class="counter-btn" data-a="1" data-field="foh" data-part="${dp.id}">+</button>
+              </div>
+            </div>
+            <div class="counter boh">
+              <span class="counter-label">BOH</span>
+              <div class="counter-row">
+                <button type="button" class="counter-btn" data-a="-1" data-field="boh" data-part="${dp.id}">−</button>
+                <input class="counter-val" type="number" min="0" data-field="boh" data-part="${dp.id}" value="${d.boh}" />
+                <button type="button" class="counter-btn" data-a="1" data-field="boh" data-part="${dp.id}">+</button>
+              </div>
+            </div>
+            <div class="counter leader">
+              <span class="counter-label">Leader</span>
+              <div class="counter-row">
+                <button type="button" class="counter-btn" data-a="-1" data-field="leader" data-part="${dp.id}">−</button>
+                <input class="counter-val" type="number" min="0" data-field="leader" data-part="${dp.id}" value="${d.leader}" />
+                <button type="button" class="counter-btn" data-a="1" data-field="leader" data-part="${dp.id}">+</button>
+              </div>
+            </div>
+            <div class="hours-input-wrap">
+              <label>Hrs</label>
+              <input class="hours-input" type="number" min="0" step="0.5" data-field="hours" data-part="${dp.id}" value="${d.hours}" />
+            </div>
+            <div class="dp-results">
+              <div class="dp-result headcount">
+                <div class="lbl">Headcount</div>
+                <div class="val">${totalHc}</div>
+                <div class="headcount-formula">${fohHc} + ${bohHc} + ${leaderHc}</div>
+              </div>
+              <div class="dp-result">
+                <div class="lbl">Labor</div>
+                <div class="val">${fmt(labor,1)}</div>
+              </div>
+              <div class="dp-result splh">
+                <div class="lbl">SPLH</div>
+                <div class="val" style="color:${splhColor(splhSt)}">${labor > 0 ? fmtMoney(splh) : '—'}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(card);
+      });
+
+      wrap.querySelectorAll('.counter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const part = btn.dataset.part;
+          const field = btn.dataset.field;
+          const delta = parseInt(btn.dataset.a);
+          staffData[activeDay][part][field] = Math.max(0, (staffData[activeDay][part][field] || 0) + delta);
+          renderAll();
+        });
+      });
+
+      wrap.querySelectorAll('.counter-val, .hours-input').forEach(input => {
+        input.addEventListener('input', () => {
+          staffData[activeDay][input.dataset.part][input.dataset.field] = parseFloat(input.value) || 0;
+          renderAll();
+        });
+      });
+
+      wrap.querySelectorAll('.sales-input').forEach(input => {
+        input.addEventListener('input', () => {
+          partSalesData[activeDay][input.dataset.part] = parseFloat(input.value) || 0;
+          renderAll();
+        });
+      });
+
+      renderDaySummary();
+    }
+
+    function renderDaySummary() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const total = dayHours(activeDay);
+      const diff = b.dailyBudget - total;
+      const daySplh = dailyProductivity(inp, activeDay);
+      const daySplhSt = splhStatus(daySplh, inp.targetSplh);
+      const fohHrs = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].foh||0) * (staffData[activeDay][dp.id].hours||0), 0);
+      const bohHrs = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].boh||0) * (staffData[activeDay][dp.id].hours||0), 0);
+      const leaderHrs = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].leader||0) * (staffData[activeDay][dp.id].hours||0), 0);
+      const fohHcDay = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].foh||0), 0);
+      const bohHcDay = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].boh||0), 0);
+      const leaderHcDay = DAYPARTS.reduce((s, dp) => s + (staffData[activeDay][dp.id].leader||0), 0);
+      const totalHcDay = fohHcDay + bohHcDay + leaderHcDay;
+
+      const daySales = dailySalesTotal(activeDay);
+
+      $('daySummary').innerHTML = `
+        <div class="sum-pill"><div class="lbl">Day Sales</div><div class="val">${fmtMoney(daySales)}</div></div>
+        <div class="sum-pill"><div class="lbl">Headcount Total</div><div class="val" style="color:var(--violet)">${totalHcDay}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${fohHcDay} FOH + ${bohHcDay} BOH + ${leaderHcDay} Ldr</div></div>
+        <div class="sum-pill"><div class="lbl">Daily SPLH</div><div class="val" style="color:${splhColor(daySplhSt)}">${total > 0 ? fmtMoney(daySplh) : '—'}</div></div>
+        <div class="sum-pill"><div class="lbl">FOH Hours</div><div class="val" style="color:var(--foh)">${fmt(fohHrs,1)}</div></div>
+        <div class="sum-pill"><div class="lbl">BOH Hours</div><div class="val" style="color:var(--boh)">${fmt(bohHrs,1)}</div></div>
+        <div class="sum-pill"><div class="lbl">Leader Hours</div><div class="val" style="color:var(--leader)">${fmt(leaderHrs,1)}</div></div>
+        <div class="sum-pill"><div class="lbl">Day Total Hrs</div><div class="val">${fmt(total,1)}</div></div>
+        <div class="sum-pill"><div class="lbl">vs Budget</div><div class="val" style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>=0?'+':''}${fmt(diff,1)}</div></div>
+      `;
+
+      renderDaypartProductivity();
+    }
+
+    function renderDaypartProductivity() {
+      const inp = getInputs();
+      $('daypartProdLabel').textContent = DAYS_FULL[activeDay];
+      const body = $('daypartProdBody');
+      body.innerHTML = '';
+
+      let sumFohHc = 0, sumBohHc = 0, sumLeaderHc = 0;
+      DAYPARTS.forEach(dp => {
+        const d = staffData[activeDay][dp.id];
+        const fohHc = d.foh || 0;
+        const bohHc = d.boh || 0;
+        const leaderHc = d.leader || 0;
+        const totalHc = partHeadcount(d);
+        sumFohHc += fohHc;
+        sumBohHc += bohHc;
+        sumLeaderHc += leaderHc;
+        const labor = partHours(activeDay, dp.id);
+        const sales = partSales(activeDay, dp.id);
+        const splh = partProductivity(inp, activeDay, dp.id);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="name-cell">${dp.icon} ${dp.name}</td>
+          <td>${fmtMoney(sales)}</td>
+          <td style="color:var(--foh)">${fohHc}</td>
+          <td style="color:var(--boh)">${bohHc}</td>
+          <td style="color:var(--leader)">${leaderHc}</td>
+          <td style="font-weight:700;color:var(--violet)">${totalHc}</td>
+          <td>${fmt(labor, 1)}</td>
+          <td style="color:${splhColor(splhStatus(splh, inp.targetSplh))}">${labor > 0 ? fmtMoney(splh) + '/hr' : '—'}</td>
+          <td>${splhBadge(splh, inp.targetSplh)}</td>
+        `;
+        body.appendChild(tr);
+      });
+
+      const daySplh = dailyProductivity(inp, activeDay);
+      const totalHrs = dayHours(activeDay);
+      const trTotal = document.createElement('tr');
+      trTotal.style.background = 'rgba(56,189,248,0.05)';
+      trTotal.innerHTML = `
+        <td class="name-cell"><strong>Day Total</strong></td>
+        <td><strong>${fmtMoney(dailySalesTotal(activeDay))}</strong></td>
+        <td style="color:var(--foh)"><strong>${sumFohHc}</strong></td>
+        <td style="color:var(--boh)"><strong>${sumBohHc}</strong></td>
+        <td style="color:var(--leader)"><strong>${sumLeaderHc}</strong></td>
+        <td style="color:var(--violet)"><strong>${sumFohHc + sumBohHc + sumLeaderHc}</strong></td>
+        <td><strong>${fmt(totalHrs, 1)}</strong></td>
+        <td style="color:${splhColor(splhStatus(daySplh, inp.targetSplh))}"><strong>${totalHrs > 0 ? fmtMoney(daySplh) + '/hr' : '—'}</strong></td>
+        <td>${splhBadge(daySplh, inp.targetSplh)}</td>
+      `;
+      body.appendChild(trTotal);
+    }
+
+    function renderDailyProductivity() {
+      const inp = getInputs();
+      const body = $('dailyProdBody');
+      body.innerHTML = '';
+
+      for (let i = 0; i < inp.operatingDays; i++) {
+        const hrs = dayHours(i);
+        const daySales = dailySalesTotal(i);
+        const splh = dailyProductivity(inp, i);
+        const tr = document.createElement('tr');
+        if (i === activeDay) tr.style.background = 'rgba(56,189,248,0.06)';
+        tr.innerHTML = `
+          <td class="name-cell">${DAYS_FULL[i]}${i === activeDay ? ' ◂' : ''}</td>
+          <td>${fmtMoney(daySales)}</td>
+          <td>${fmt(hrs, 1)}</td>
+          <td style="color:${splhColor(splhStatus(splh, inp.targetSplh))}">${hrs > 0 ? fmtMoney(splh) + '/hr' : '—'}</td>
+          <td>${splhBadge(splh, inp.targetSplh)}</td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    function renderWeekChart() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const maxH = Math.max(b.dailyBudget, ...Array.from({length: inp.operatingDays}, (_, i) => dayHours(i)), 1);
+      const budgetPct = (b.dailyBudget / maxH) * 90;
+
+      $('weekChart').innerHTML = '';
+      for (let i = 0; i < inp.operatingDays; i++) {
+        const hrs = dayHours(i);
+        const h = Math.max((hrs / maxH) * 90, 4);
+        const over = hrs > b.dailyBudget + 0.05;
+        const col = document.createElement('div');
+        col.className = 'chart-col';
+        col.innerHTML = `
+          <div class="chart-bar-wrap">
+            <div class="chart-budget-line" style="bottom:${budgetPct}px"></div>
+            <div class="chart-bar${over?' over':''}" style="height:${h}px" title="${fmt(hrs,1)}h planned / ${fmt(b.dailyBudget,1)}h budget"></div>
+          </div>
+          <span class="chart-lbl">${DAYS[i]}</span>
+        `;
+        $('weekChart').appendChild(col);
+      }
+
+      renderSplhChart();
+    }
+
+    function renderSplhChart() {
+      const inp = getInputs();
+      const splhs = Array.from({length: inp.operatingDays}, (_, i) => dailyProductivity(inp, i));
+      const maxSplh = Math.max(inp.targetSplh * 1.25, ...splhs.filter(v => v > 0), inp.targetSplh, 1);
+      const targetPct = (inp.targetSplh / maxSplh) * 90;
+
+      $('splhChart').innerHTML = '';
+      for (let i = 0; i < inp.operatingDays; i++) {
+        const splh = splhs[i];
+        const hrs = dayHours(i);
+        const h = hrs > 0 ? Math.max((splh / maxSplh) * 90, 6) : 4;
+        const st = splhStatus(splh, inp.targetSplh);
+        const col = document.createElement('div');
+        col.className = 'chart-col';
+        col.innerHTML = `
+          <div class="chart-bar-wrap">
+            <div class="chart-target-line" style="bottom:${targetPct}px" title="Target ${fmtMoney(inp.targetSplh)}/hr"></div>
+            <div class="chart-bar" style="height:${h}px;background:linear-gradient(180deg, ${splhColor(st)}, rgba(255,255,255,0.15))" title="${fmtMoney(splh)}/hr"></div>
+          </div>
+          <span class="chart-lbl">${DAYS[i]}</span>
+          <span class="chart-splh" style="color:${splhColor(st)}">${hrs > 0 ? fmtMoney(splh) : '—'}</span>
+        `;
+        $('splhChart').appendChild(col);
+      }
+
+      const daySplh = dailyProductivity(inp, activeDay);
+      const daySt = splhStatus(daySplh, inp.targetSplh);
+      $('liveDaySplh').textContent = dayHours(activeDay) > 0 ? fmtMoney(daySplh) + '/hr' : '—';
+      $('liveDaySplh').style.color = splhColor(daySt);
+    }
+
+    function renderLivePanel() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const planned = weekHours();
+      const remaining = b.limit - planned;
+      const enteredWeekSales = weekSalesEntered(inp);
+      const productivity = planned > 0 ? enteredWeekSales / planned : 0;
+      const spentPct = b.limit > 0 ? (planned / b.limit) * 100 : 0;
+
+      animateVal($('liveLimit'), b.limit, v => fmt(v, 1));
+      animateVal($('liveDaily'), b.dailyBudget, v => fmt(v, 1));
+      animateVal($('livePlanned'), planned, v => fmt(v, 1));
+      animateVal($('liveRemaining'), remaining, v => (v >= 0 ? '+' : '') + fmt(v, 1));
+
+      $('liveProductivity').textContent = fmtMoney(productivity);
+      $('liveProductivity').style.color =
+        productivity >= inp.targetSplh ? 'var(--green)' :
+        productivity >= inp.targetSplh * 0.9 ? 'var(--amber)' : 'var(--red)';
+
+      $('gaugePct').textContent = fmt(Math.min(spentPct, 999), 0) + '%';
+      const offset = CIRC - (Math.min(spentPct, 100) / 100) * CIRC;
+      $('gaugeFill').style.strokeDashoffset = offset;
+      $('gaugeFill').style.stroke =
+        spentPct > 100 ? 'var(--red)' : spentPct > 95 ? 'var(--amber)' : 'url(#gaugeGrad)';
+
+      $('lsRemaining').querySelector('.val').style.color = remaining >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+
+    function renderBreakdown() {
+      const inp = getInputs();
+      const b = calcBudget(inp);
+      const planned = weekHours();
+      const remaining = b.limit - planned;
+      const enteredWeekSales = weekSalesEntered(inp);
+      const productivity = planned > 0 ? enteredWeekSales / planned : 0;
+      const spentPct = b.limit > 0 ? (planned / b.limit) * 100 : 0;
+      const laborCost = planned * inp.avgWage;
+      const laborPct = inp.weekSales > 0 ? (laborCost / inp.weekSales) * 100 : 0;
+
+      const fohWeek = Array.from({length: inp.operatingDays}, (_, i) =>
+        DAYPARTS.reduce((s, dp) => s + (staffData[i][dp.id].foh||0) * (staffData[i][dp.id].hours||0), 0)
+      ).reduce((a, c) => a + c, 0);
+
+      const bohWeek = Array.from({length: inp.operatingDays}, (_, i) =>
+        DAYPARTS.reduce((s, dp) => s + (staffData[i][dp.id].boh||0) * (staffData[i][dp.id].hours||0), 0)
+      ).reduce((a, c) => a + c, 0);
+
+      const leaderWeek = Array.from({length: inp.operatingDays}, (_, i) =>
+        DAYPARTS.reduce((s, dp) => s + (staffData[i][dp.id].leader||0) * (staffData[i][dp.id].hours||0), 0)
+      ).reduce((a, c) => a + c, 0);
+
+      let rows = `
+        <li><span class="key">Weekly Sales (target)</span><span class="val">${fmtMoney(inp.weekSales)}</span></li>
+        <li><span class="key">Weekly Sales (entered)</span><span class="val" style="color:${enteredWeekSales >= inp.weekSales ? 'var(--green)' : 'var(--amber)'}">${fmtMoney(enteredWeekSales)}</span></li>
+        <li><span class="key">Target SPLH</span><span class="val">${fmtMoney(inp.targetSplh)}/hr</span></li>
+        <li><span class="key">Base Labor Hours</span><span class="val">${fmt(b.baseHours,1)} hrs</span></li>
+        <li><span class="key">+ Training Buffer</span><span class="val" style="color:var(--amber)">+${fmt(inp.trainingHours,0)} hrs</span></li>
+        <li class="total"><span class="key">Labor Hours Limit</span><span class="val">${fmt(b.limit,1)} hrs</span></li>
+        <li><span class="key">FOH Hours (planned)</span><span class="val" style="color:var(--foh)">${fmt(fohWeek,1)} hrs</span></li>
+        <li><span class="key">BOH Hours (planned)</span><span class="val" style="color:var(--boh)">${fmt(bohWeek,1)} hrs</span></li>
+        <li><span class="key">Leader Hours (planned)</span><span class="val" style="color:var(--leader)">${fmt(leaderWeek,1)} hrs</span></li>
+        <li><span class="key">Total Planned Hours</span><span class="val">${fmt(planned,1)} hrs</span></li>
+        <li><span class="key">Budget Used</span><span class="val">${fmt(spentPct,1)}%</span></li>
+        <li><span class="key">True Productivity</span><span class="val" style="color:${productivity>=inp.targetSplh?'var(--green)':'var(--red)'}">${fmtMoney(productivity)}/hr</span></li>
+      `;
+
+      if (inp.avgWage > 0) {
+        rows += `
+          <li><span class="key">Est. Labor Cost</span><span class="val">${fmtMoney(laborCost)}</span></li>
+          <li><span class="key">Est. Labor %</span><span class="val">${fmtPct(laborPct)}</span></li>
+        `;
+      }
+
+      rows += `<li class="total"><span class="key">Budget Remaining</span><span class="val" style="color:${remaining>=0?'var(--green)':'var(--red)'}">${remaining>=0?'+':''}${fmt(remaining,1)} hrs</span></li>`;
+
+      // Daily rows
+      for (let i = 0; i < inp.operatingDays; i++) {
+        const pd = dayHours(i);
+        const diff = b.dailyBudget - pd;
+        const dSplh = dailyProductivity(inp, i);
+        const dSt = splhStatus(dSplh, inp.targetSplh);
+        rows += `<li><span class="key">${DAYS_FULL[i]}</span><span class="val" style="color:${diff>=0?'var(--muted)':'var(--red)'}">${fmtMoney(dailySalesTotal(i))} sales · ${fmt(pd,1)} hrs <span style="opacity:0.6">(${diff>=0?'+':''}${fmt(diff,1)})</span> · <span style="color:${splhColor(dSt)}">${pd > 0 ? fmtMoney(dSplh) + '/hr' : '—'}</span></span></li>`;
+      }
+
+      $('weeklyBreakdown').innerHTML = rows;
+
+      const insight = $('insightNote');
+      if (spentPct > 100) {
+        insight.className = 'insight bad';
+        insight.innerHTML = `Over budget by <strong>${fmt(Math.abs(remaining),1)} hours</strong> (${fmt(spentPct - 100, 1)}% above limit). Trim staffing or raise sales to hit <strong>${fmtMoney(inp.targetSplh)}/hr</strong>.`;
+      } else if (productivity < inp.targetSplh) {
+        insight.className = 'insight warn';
+        insight.innerHTML = `Productivity is <strong>${fmtMoney(productivity)}/hr</strong> — below your <strong>${fmtMoney(inp.targetSplh)}/hr</strong> target. <strong>${fmt(remaining,1)} hrs</strong> remain in budget, or reduce headcount to raise SPLH.`;
+      } else {
+        insight.className = 'insight good';
+        insight.innerHTML = `On track at <strong>${fmtMoney(productivity)}/hr</strong>. <strong>${fmt(remaining,1)} hours</strong> remain in your weekly budget (incl. ${fmt(inp.trainingHours,0)} training hrs).`;
+      }
+    }
+
+    function renderAll() {
+      renderFormula();
+      renderDayPicker();
+      renderDayparts();
+      renderWeekChart();
+      renderLivePanel();
+      renderDailyProductivity();
+      renderBreakdown();
+    }
+
+    ['weekSales','targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
+      $(id).addEventListener('input', renderAll);
+    });
+
+    $('copyMondayBtn').addEventListener('click', () => {
+      const inp = getInputs();
+      for (let i = 1; i < inp.operatingDays; i++) {
+        DAYPARTS.forEach(dp => { staffData[i][dp.id] = { ...staffData[0][dp.id] }; });
+      }
+      renderAll();
+      showToast('Monday staffing copied to all days');
+    });
+
+    $('copyMondaySalesBtn').addEventListener('click', () => {
+      const inp = getInputs();
+      for (let i = 1; i < inp.operatingDays; i++) {
+        DAYPARTS.forEach(dp => { partSalesData[i][dp.id] = partSalesData[0][dp.id]; });
+      }
+      renderAll();
+      showToast('Monday sales copied to all days');
+    });
+
+    $('clearDayBtn').addEventListener('click', () => {
+      DAYPARTS.forEach(dp => {
+        staffData[activeDay][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+        partSalesData[activeDay][dp.id] = 0;
+      });
+      renderAll();
+      showToast(`${DAYS_FULL[activeDay]} reset`);
+    });
+
+    // Step nav highlight on scroll
+    const stepLinks = document.querySelectorAll('.step-link');
+    const sections = ['step1','step2','step3'].map(id => $(id));
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          stepLinks.forEach(l => l.classList.remove('active'));
+          const match = document.querySelector(`.step-link[href="#${e.target.id}"]`);
+          match?.classList.add('active');
+        }
+      });
+    }, { threshold: 0.35 });
+    sections.forEach(s => s && obs.observe(s));
+
+    renderAll();
+  </script>
+</body>
+</html>
