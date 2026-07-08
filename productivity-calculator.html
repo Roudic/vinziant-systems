@@ -846,80 +846,6 @@
     .counter-val::-webkit-outer-spin-button,
     .counter-val::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-    .sales-split-wrap {
-      width: 100%;
-      min-width: 200px;
-      flex: 1 1 220px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .sales-split-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-    }
-
-    .sales-split-val {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--cyan);
-    }
-
-    .range-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.08);
-      outline: none;
-      cursor: pointer;
-    }
-
-    .range-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--cyan), var(--violet));
-      border: 2px solid rgba(255,255,255,0.25);
-      box-shadow: 0 0 12px var(--glow);
-      cursor: grab;
-    }
-
-    .range-slider::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--cyan), var(--violet));
-      border: 2px solid rgba(255,255,255,0.25);
-      box-shadow: 0 0 12px var(--glow);
-      cursor: grab;
-    }
-
-    .day-sales-lock {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      padding: 10px 16px;
-      margin-bottom: 12px;
-      background: rgba(167,139,250,0.06);
-      border: 1px solid rgba(167,139,250,0.15);
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-    }
-
-    .day-sales-lock strong { color: var(--violet); font-family: var(--mono); }
-
     .week-budget-bar {
       display: flex;
       align-items: center;
@@ -1655,7 +1581,7 @@
     <header class="hero">
       <div class="hero-badge"><span class="pulse"></span> Live calculations · updates as you type</div>
       <h1>Plan labor with <em>precision.</em></h1>
-      <p class="hero-sub">Enter weekly sales — it locks in daily and day-part sales. Use sliders to adjust each day part's share. Enter staffing numbers manually.</p>
+      <p class="hero-sub">Set your weekly sales target and type in day-part sales and staffing. Budget and productivity update live.</p>
     </header>
 
     <div class="steps-nav">
@@ -1672,7 +1598,7 @@
           <div class="card-head">
             <div>
               <div class="card-title">Sales &amp; Labor Target</div>
-              <p class="card-desc">Weekly sales locks in all day and day-part sales below. Adjust the split with sliders in Step 2.</p>
+              <p class="card-desc">Weekly sales target sets your labor hour budget. Type day-part sales and staffing in Step 2.</p>
             </div>
             <span class="card-tag">Step 1</span>
           </div>
@@ -1712,12 +1638,11 @@
           <div class="card-head">
             <div>
               <div class="card-title">Day-Part Staffing</div>
-              <p class="card-desc">Use <strong style="color:var(--text)">sales sliders</strong> to adjust each day part's share of the day. Enter <strong style="color:var(--text)">FOH / BOH / Leader</strong> numbers manually.</p>
+              <p class="card-desc">Type <strong style="color:var(--text)">sales $</strong> and <strong style="color:var(--text)">FOH / BOH / Leader</strong> for each day part.</p>
             </div>
             <span class="card-tag">Step 2</span>
           </div>
 
-          <div class="day-sales-lock" id="daySalesLock"></div>
           <div class="week-budget-bar" id="weekBudgetBar"></div>
 
           <div class="toolbar">
@@ -1875,16 +1800,13 @@
     const API_BASE = '/api/plans';
     let activeDay = 0;
     let currentPlanId = null;
-    const DEFAULT_SALES_PCT = { breakfast: 15.4, lunch: 43.1, pm: 13.8, dinner: 27.7 };
     const staffData = {};
     const partSalesData = {};
-    const partSalesPct = {};
     const animState = {};
 
     DAYS_FULL.forEach((_, di) => {
       staffData[di] = {};
       partSalesData[di] = {};
-      partSalesPct[di] = { ...DEFAULT_SALES_PCT };
       DAYPARTS.forEach(dp => {
         staffData[di][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id, di) };
         partSalesData[di][dp.id] = 0;
@@ -1908,10 +1830,8 @@
         Object.assign(staffData[0][dp.id], staff[dp.id]);
         partSalesData[0][dp.id] = sales[dp.id];
       });
-      syncPctFromSales(0);
     }
     seedMonday();
-    distributeWeeklySales();
 
     const $ = id => document.getElementById(id);
     const fmt = (n, d = 1) => isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
@@ -1940,7 +1860,6 @@
         activeDay,
         staffData,
         partSalesData,
-        partSalesPct,
       };
     }
 
@@ -1960,12 +1879,10 @@
             ? { ...saved }
             : { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
           partSalesData[di][dp.id] = data.partSalesData?.[di]?.[dp.id] ?? 0;
-          partSalesPct[di][dp.id] = data.partSalesPct?.[di]?.[dp.id] ?? DEFAULT_SALES_PCT[dp.id];
         });
       });
 
       activeDay = Math.min(6, Math.max(0, data.activeDay ?? 0));
-      distributeWeeklySales();
     }
 
     function setCloudStatus(msg, kind = '') {
@@ -2086,15 +2003,12 @@
       $('operatingDays').value = 7;
       $('avgWage').value = 16;
       activeDay = 0;
-      DAYS_FULL.forEach((_, i) => {
-        partSalesPct[i] = { ...DEFAULT_SALES_PCT };
-        if (i > 0) {
-          DAYPARTS.forEach(dp => {
-            staffData[i][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
-          });
-        }
-      });
-      distributeWeeklySales();
+      for (let i = 1; i < DAYS_FULL.length; i++) {
+        DAYPARTS.forEach(dp => {
+          staffData[i][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+          partSalesData[i][dp.id] = 0;
+        });
+      }
       renderAll();
       setCloudStatus('New blank plan — enter a name and save when ready.', 'ok');
       showToast('New plan started');
@@ -2141,54 +2055,6 @@
       const sales = partSales(di, partId);
       if (sales > 0) return sales / inp.targetSplh;
       return calcDailyBudget(inp, di) / DAYPARTS.length;
-    }
-
-    function dailySalesTarget(inp, di) {
-      return (parseFloat($('weekSales').value) || 0) / inp.operatingDays;
-    }
-
-    function applySalesFromPct(di) {
-      const inp = getInputs();
-      const daily = dailySalesTarget(inp, di);
-      DAYPARTS.forEach(dp => {
-        partSalesData[di][dp.id] = Math.round(daily * (partSalesPct[di][dp.id] || 0) / 100);
-      });
-      const sum = DAYPARTS.reduce((s, dp) => s + partSalesData[di][dp.id], 0);
-      const drift = Math.round(daily) - sum;
-      if (drift !== 0) {
-        partSalesData[di][DAYPARTS[DAYPARTS.length - 1].id] += drift;
-      }
-    }
-
-    function distributeWeeklySales() {
-      const inp = getInputs();
-      for (let i = 0; i < inp.operatingDays; i++) applySalesFromPct(i);
-    }
-
-    function syncPctFromSales(di) {
-      const daily = dailySalesTotal(di);
-      if (daily <= 0) return;
-      DAYPARTS.forEach(dp => {
-        partSalesPct[di][dp.id] = (partSales(di, dp.id) / daily) * 100;
-      });
-    }
-
-    function setPartSalesPct(di, partId, newPct) {
-      const others = DAYPARTS.filter(dp => dp.id !== partId);
-      newPct = Math.max(0, Math.min(100, newPct));
-      const remaining = 100 - newPct;
-      const othersSum = others.reduce((s, dp) => s + (partSalesPct[di][dp.id] || 0), 0);
-
-      partSalesPct[di][partId] = newPct;
-      if (othersSum > 0) {
-        others.forEach(dp => {
-          partSalesPct[di][dp.id] = ((partSalesPct[di][dp.id] || 0) / othersSum) * remaining;
-        });
-      } else {
-        const each = remaining / others.length;
-        others.forEach(dp => { partSalesPct[di][dp.id] = each; });
-      }
-      applySalesFromPct(di);
     }
 
     function partHeadcount(d) {
@@ -2291,16 +2157,6 @@
       setTimeout(() => t.classList.remove('show'), 2400);
     }
 
-    function renderDaySalesLock() {
-      const inp = getInputs();
-      const daily = dailySalesTarget(inp, activeDay);
-      const actual = dailySalesTotal(activeDay);
-      $('daySalesLock').innerHTML = `
-        <span>${DAYS_FULL[activeDay]} sales locked at <strong>${fmtMoney(daily)}</strong> (weekly ÷ ${inp.operatingDays} days)</span>
-        <span style="color:var(--muted)">Split total: <strong style="color:var(--cyan)">${fmtMoney(actual)}</strong></span>
-      `;
-    }
-
     function renderWeekBudgetBar() {
       const inp = getInputs();
       const b = calcBudget(inp);
@@ -2377,12 +2233,10 @@
         const partBudget = calcPartBudget(inp, activeDay, dp.id);
         const splh = partProductivity(inp, activeDay, dp.id);
         const splhSt = splhStatus(splh, inp.targetSplh);
-        const pct = partSalesPct[activeDay][dp.id] || 0;
         const overPartBudget = partBudget > 0 && labor > partBudget + 0.05;
 
         const card = document.createElement('div');
         card.className = 'daypart-card';
-        card.dataset.part = dp.id;
         card.innerHTML = `
           <div class="dp-info">
             <div class="dp-icon">${dp.icon}</div>
@@ -2392,13 +2246,6 @@
             </div>
           </div>
           <div class="dp-controls">
-            <div class="sales-split-wrap">
-              <div class="sales-split-head">
-                <span>Sales Split</span>
-                <span class="sales-split-val" data-sales-label="${dp.id}">${fmt(pct, 1)}% · ${fmtMoney(salesVal)}</span>
-              </div>
-              <input class="range-slider sales-split-range" type="range" min="0" max="100" step="0.5" data-part="${dp.id}" value="${pct}" />
-            </div>
             <div class="sales-input-wrap">
               <label>Sales $</label>
               <input class="sales-input" type="number" min="0" step="100" data-field="sales" data-part="${dp.id}" value="${salesVal || ''}" placeholder="0" />
@@ -2455,30 +2302,6 @@
         wrap.appendChild(card);
       });
 
-      wrap.querySelectorAll('.sales-split-range').forEach(slider => {
-        slider.addEventListener('input', () => {
-          setPartSalesPct(activeDay, slider.dataset.part, parseFloat(slider.value) || 0);
-          DAYPARTS.forEach(dp => {
-            const pct = partSalesPct[activeDay][dp.id] || 0;
-            const sales = partSales(activeDay, dp.id);
-            const label = wrap.querySelector(`[data-sales-label="${dp.id}"]`);
-            const pctSlider = wrap.querySelector(`.sales-split-range[data-part="${dp.id}"]`);
-            const salesInput = wrap.querySelector(`.sales-input[data-part="${dp.id}"]`);
-            if (label) label.textContent = `${fmt(pct, 1)}% · ${fmtMoney(sales)}`;
-            if (pctSlider) pctSlider.value = pct;
-            if (salesInput) salesInput.value = sales || '';
-          });
-          renderDaySalesLock();
-          renderFormula();
-          renderDayPicker();
-          renderDaySummary();
-          renderWeekChart();
-          renderLivePanel();
-          renderDailyProductivity();
-          renderBreakdown();
-        });
-      });
-
       wrap.querySelectorAll('.counter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const part = btn.dataset.part;
@@ -2498,21 +2321,7 @@
 
       wrap.querySelectorAll('.sales-input').forEach(input => {
         input.addEventListener('input', () => {
-          const part = input.dataset.part;
-          const newSales = parseFloat(input.value) || 0;
-          const daily = dailySalesTarget(getInputs(), activeDay);
-          if (daily <= 0) return;
-          partSalesData[activeDay][part] = newSales;
-          partSalesPct[activeDay][part] = (newSales / daily) * 100;
-          const others = DAYPARTS.filter(dp => dp.id !== part);
-          const remaining = Math.max(0, 100 - partSalesPct[activeDay][part]);
-          const othersSum = others.reduce((s, dp) => s + (partSalesPct[activeDay][dp.id] || 0), 0);
-          if (othersSum > 0) {
-            others.forEach(dp => {
-              partSalesPct[activeDay][dp.id] = ((partSalesPct[activeDay][dp.id] || 0) / othersSum) * remaining;
-            });
-          }
-          applySalesFromPct(activeDay);
+          partSalesData[activeDay][input.dataset.part] = parseFloat(input.value) || 0;
           renderAll();
         });
       });
@@ -2742,8 +2551,8 @@
       ).reduce((a, c) => a + c, 0);
 
       let rows = `
-        <li><span class="key">Weekly Sales (locked)</span><span class="val" style="color:var(--cyan)">${fmtMoney(b.weekSalesTarget)}</span></li>
-        <li><span class="key">Distributed total</span><span class="val" style="color:${Math.abs(enteredWeekSales - b.weekSalesTarget) < 10 ? 'var(--green)' : 'var(--amber)'}">${fmtMoney(enteredWeekSales)}</span></li>
+        <li><span class="key">Weekly Sales (target)</span><span class="val">${fmtMoney(b.weekSalesTarget)}</span></li>
+        <li><span class="key">Weekly Sales (entered)</span><span class="val" style="color:${enteredWeekSales >= b.weekSalesTarget ? 'var(--green)' : 'var(--amber)'}">${fmtMoney(enteredWeekSales)}</span></li>
         <li><span class="key">Target SPLH</span><span class="val">${fmtMoney(inp.targetSplh)}/hr</span></li>
         <li><span class="key">Base Labor Hours</span><span class="val">${fmt(b.baseHours,1)} hrs</span></li>
         <li><span class="key">+ Training Buffer</span><span class="val" style="color:var(--amber)">+${fmt(inp.trainingHours,0)} hrs</span></li>
@@ -2792,7 +2601,6 @@
 
     function renderAll() {
       renderFormula();
-      renderDaySalesLock();
       renderWeekBudgetBar();
       renderDayPicker();
       renderDayparts();
@@ -2802,17 +2610,7 @@
       renderBreakdown();
     }
 
-    $('weekSales').addEventListener('input', () => {
-      distributeWeeklySales();
-      renderAll();
-    });
-
-    $('operatingDays').addEventListener('input', () => {
-      distributeWeeklySales();
-      renderAll();
-    });
-
-    ['targetSplh','trainingHours','avgWage'].forEach(id => {
+    ['weekSales','targetSplh','trainingHours','operatingDays','avgWage'].forEach(id => {
       $(id).addEventListener('input', renderAll);
     });
 
@@ -2828,18 +2626,16 @@
     $('copyMondaySalesBtn').addEventListener('click', () => {
       const inp = getInputs();
       for (let i = 1; i < inp.operatingDays; i++) {
-        partSalesPct[i] = { ...partSalesPct[0] };
+        DAYPARTS.forEach(dp => { partSalesData[i][dp.id] = partSalesData[0][dp.id]; });
       }
-      distributeWeeklySales();
       renderAll();
-      showToast('Monday sales split copied to all days');
+      showToast('Monday sales copied to all days');
     });
 
     $('clearDayBtn').addEventListener('click', () => {
-      partSalesPct[activeDay] = { ...DEFAULT_SALES_PCT };
-      applySalesFromPct(activeDay);
       DAYPARTS.forEach(dp => {
         staffData[activeDay][dp.id] = { foh: 0, boh: 0, leader: 0, hours: defaultHours(dp.id) };
+        partSalesData[activeDay][dp.id] = 0;
       });
       renderAll();
       showToast(`${DAYS_FULL[activeDay]} reset`);
